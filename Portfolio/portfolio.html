@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Eternals Studio</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/components/navbar/navbar.css">
+    <link rel="stylesheet" href="portfolio.css">
+</head>
+<body>
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <main>
+        <section class="portfolio-hero">
+            <h1>Our <span class="gradient-text">Portfolio</span></h1>
+            <p class="subtitle">Explore our creative work and success stories</p>
+        </section>
+
+        <section class="portfolio-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="web">Web Development</button>
+            <button class="filter-btn" data-filter="graphic">Graphic Design</button>
+            <button class="filter-btn" data-filter="3d">3D Modeling</button>
+            <button class="filter-btn" data-filter="animation">Animation</button>
+        </section>
+
+        <section class="portfolio-grid">
+            <!-- Portfolio items will be dynamically loaded here -->
+            <div class="portfolio-item" data-category="graphic">
+                <div class="portfolio-image">
+                    <img src="/placeholder-project.jpg" alt="Project 1" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                </div>
+                <div class="portfolio-info">
+                    <h3>Brand Identity Design</h3>
+                    <p>Complete brand identity for a tech startup</p>
+                    <span class="portfolio-category">Graphic Design</span>
+                </div>
+            </div>
+
+            <div class="portfolio-item" data-category="web">
+                <div class="portfolio-image">
+                    <img src="/placeholder-project.jpg" alt="Project 2" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                </div>
+                <div class="portfolio-info">
+                    <h3>E-Commerce Website</h3>
+                    <p>Modern online store with full functionality</p>
+                    <span class="portfolio-category">Web Development</span>
+                </div>
+            </div>
+
+            <div class="portfolio-item" data-category="3d">
+                <div class="portfolio-image">
+                    <img src="/placeholder-project.jpg" alt="Project 3" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                </div>
+                <div class="portfolio-info">
+                    <h3>Product Visualization</h3>
+                    <p>Photorealistic 3D product renders</p>
+                    <span class="portfolio-category">3D Modeling</span>
+                </div>
+            </div>
+
+            <div class="portfolio-item" data-category="animation">
+                <div class="portfolio-image">
+                    <img src="/placeholder-project.jpg" alt="Project 4" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                </div>
+                <div class="portfolio-info">
+                    <h3>Motion Graphics</h3>
+                    <p>Engaging animated content for social media</p>
+                    <span class="portfolio-category">Animation</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="portfolio-cta">
+            <h2>Like what you see?</h2>
+            <p>Let's create something amazing together</p>
+            <button class="cta-button" onclick="window.location.href='/Contact/contact.html'">Start Your Project →</button>
+        </section>
+    </main>
+
+    <script src="/components/navbar/navbar.js"></script>
+    <script src="portfolio.js"></script>
+</body>
+</html>

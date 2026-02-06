@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store - Eternals Studio</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/components/navbar/navbar.css">
+    <link rel="stylesheet" href="store.css">
+</head>
+<body>
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <main>
+        <section class="store-hero">
+            <h1>Our <span class="gradient-text">Store</span></h1>
+            <p class="subtitle">Premium templates, resources, and digital products</p>
+        </section>
+
+        <section class="store-categories">
+            <button class="category-btn active" data-category="all">All Products</button>
+            <button class="category-btn" data-category="templates">Templates</button>
+            <button class="category-btn" data-category="graphics">Graphics</button>
+            <button class="category-btn" data-category="assets">3D Assets</button>
+            <button class="category-btn" data-category="presets">Presets</button>
+        </section>
+
+        <section class="store-grid">
+            <div class="product-card" data-category="templates">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 1" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                    <span class="product-badge">New</span>
+                </div>
+                <div class="product-info">
+                    <h3>Website Template Pack</h3>
+                    <p>Modern, responsive website templates</p>
+                    <div class="product-footer">
+                        <span class="product-price">$49.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card" data-category="graphics">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 2" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                </div>
+                <div class="product-info">
+                    <h3>Logo Design Bundle</h3>
+                    <p>50+ premium logo templates</p>
+                    <div class="product-footer">
+                        <span class="product-price">$29.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card" data-category="assets">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 3" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                    <span class="product-badge">Popular</span>
+                </div>
+                <div class="product-info">
+                    <h3>3D Model Collection</h3>
+                    <p>High-quality 3D assets for your projects</p>
+                    <div class="product-footer">
+                        <span class="product-price">$79.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card" data-category="presets">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 4" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                </div>
+                <div class="product-info">
+                    <h3>Color Grading Presets</h3>
+                    <p>Professional LUTs for video editing</p>
+                    <div class="product-footer">
+                        <span class="product-price">$19.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card" data-category="templates">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 5" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                </div>
+                <div class="product-info">
+                    <h3>Social Media Templates</h3>
+                    <p>Instagram, Facebook, and Twitter templates</p>
+                    <div class="product-footer">
+                        <span class="product-price">$24.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card" data-category="graphics">
+                <div class="product-image">
+                    <img src="/placeholder-product.jpg" alt="Product 6" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                    <span class="product-badge">Sale</span>
+                </div>
+                <div class="product-info">
+                    <h3>Icon Pack Collection</h3>
+                    <p>1000+ vector icons in various styles</p>
+                    <div class="product-footer">
+                        <span class="product-price"><s>$39.99</s> $24.99</span>
+                        <button class="add-to-cart-btn">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cart-summary" id="cartSummary" style="display: none;">
+            <h3>Shopping Cart (<span id="cartCount">0</span>)</h3>
+            <div id="cartItems"></div>
+            <div class="cart-total">
+                <strong>Total: $<span id="cartTotal">0.00</span></strong>
+            </div>
+            <button class="checkout-btn">Proceed to Checkout</button>
+        </section>
+    </main>
+
+    <script src="/components/navbar/navbar.js"></script>
+    <script src="store.js"></script>
+</body>
+</html>

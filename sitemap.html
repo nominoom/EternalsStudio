@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternals Studio - Site Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #5a6c7d;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        
+        .page-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .page-card {
+            background: linear-gradient(135deg, rgba(64, 224, 208, 0.05), rgba(138, 127, 214, 0.05));
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid #e8ecf1;
+            transition: all 0.3s;
+        }
+        
+        .page-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(64, 224, 208, 0.2);
+            border-color: #40e0d0;
+        }
+        
+        .page-card h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .page-card p {
+            color: #5a6c7d;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .page-link {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .page-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(64, 224, 208, 0.3);
+        }
+        
+        .features {
+            list-style: none;
+            margin: 1rem 0;
+        }
+        
+        .features li {
+            color: #5a6c7d;
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #40e0d0;
+            font-weight: bold;
+        }
+        
+        .nav-flow {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px dashed #40e0d0;
+        }
+        
+        .nav-flow h2 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .flow-item {
+            padding: 1rem 1.5rem;
+            background: white;
+            border: 2px solid #40e0d0;
+            border-radius: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .flow-arrow {
+            color: #8a7fd6;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Eternals Studio Site Map</h1>
+        <p class="subtitle">Complete overview of all pages and navigation</p>
+        
+        <div class="page-grid">
+            <div class="page-card">
+                <h2>🏠 Home</h2>
+                <p>Main landing page with hero section, services overview, stats, testimonials, and footer.</p>
+                <ul class="features">
+                    <li>Animated background</li>
+                    <li>Service showcase</li>
+                    <li>Statistics display</li>
+                    <li>Client testimonials</li>
+                </ul>
+                <a href="index.html" class="page-link">Visit Home →</a>
+            </div>
+            
+            <div class="page-card">
+                <h2>🛠️ Services</h2>
+                <p>Detailed overview of all services offered by Eternals Studio.</p>
+                <ul class="features">
+                    <li>Web Development</li>
+                    <li>Graphic Design</li>
+                    <li>3D Modeling</li>
+                    <li>Motion Graphics</li>
+                    <li>Branding</li>
+                    <li>Video Editing</li>
+                </ul>
+                <a href="Services/services.html" class="page-link">View Services →</a>
+            </div>
+            
+            <div class="page-card">
+                <h2>🎨 Portfolio</h2>
+                <p>Showcase of completed projects with category filtering.</p>
+                <ul class="features">
+                    <li>Filterable gallery</li>
+                    <li>Web projects</li>
+                    <li>Graphic design</li>
+                    <li>3D work</li>
+                    <li>Animations</li>
+                </ul>
+                <a href="Portfolio/portfolio.html" class="page-link">See Portfolio →</a>
+            </div>
+            
+            <div class="page-card">
+                <h2>🛒 Store</h2>
+                <p>Digital products, templates, and resources for purchase.</p>
+                <ul class="features">
+                    <li>Templates</li>
+                    <li>Graphics</li>
+                    <li>3D Assets</li>
+                    <li>Shopping cart</li>
+                    <li>Category filters</li>
+                </ul>
+                <a href="Store/store.html" class="page-link">Browse Store →</a>
+            </div>
+            
+            <div class="page-card">
+                <h2>📋 About</h2>
+                <p>Learn about Eternals Studio, our mission, and our team.</p>
+                <ul class="features">
+                    <li>Company story</li>
+                    <li>Our mission</li>
+                    <li>Team overview</li>
+                    <li>Scroll animations</li>
+                </ul>
+                <a href="About/about.html" class="page-link">About Us →</a>
+            </div>
+            
+            <div class="page-card">
+                <h2>📞 Contact</h2>
+                <p>Get in touch with us through our contact form or direct contact info.</p>
+                <ul class="features">
+                    <li>Contact form</li>
+                    <li>Email & phone</li>
+                    <li>24/7 support info</li>
+                    <li>Form validation</li>
+                </ul>
+                <a href="Contact/contact.html" class="page-link">Contact Us →</a>
+            </div>
+        </div>
+        
+        <div class="nav-flow">
+            <h2>📍 Navigation Flow</h2>
+            <div class="flow-diagram">
+                <div class="flow-item">Home</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Services</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Portfolio</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Store</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">About</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-item">Contact</div>
+            </div>
+            <p style="text-align: center; margin-top: 1.5rem; color: #5a6c7d;">
+                All pages include a consistent navigation bar with these links, plus theme toggle and cart access.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
