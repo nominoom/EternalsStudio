@@ -19,67 +19,532 @@
             <p class="subtitle">Explore our creative work and success stories</p>
         </section>
 
-        <section class="portfolio-filters">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="web">Web Development</button>
-            <button class="filter-btn" data-filter="graphic">Graphic Design</button>
-            <button class="filter-btn" data-filter="3d">3D Modeling</button>
-            <button class="filter-btn" data-filter="animation">Animation</button>
+        <section class="portfolio-filters-container">
+            <span class="filter-label">Filter by category:</span>
+            <div class="portfolio-filters">
+                <button class="filter-btn active" data-filter="all">All Projects</button>
+                <button class="filter-btn" data-filter="branding">Branding</button>
+                <button class="filter-btn" data-filter="esports">Esports</button>
+                <button class="filter-btn" data-filter="sports">Sports</button>
+                <button class="filter-btn" data-filter="3d">3D Model</button>
+                <button class="filter-btn" data-filter="illustration">Illustration</button>
+                <button class="filter-btn" data-filter="design">Design</button>
+            </div>
         </section>
 
         <section class="portfolio-grid">
-            <!-- Portfolio items will be dynamically loaded here -->
-            <div class="portfolio-item" data-category="graphic">
+            <!-- Project 1: Hyper Wallpaper -->
+            <div class="portfolio-item" data-category="illustration">
                 <div class="portfolio-image">
-                    <img src="/placeholder-project.jpg" alt="Project 1" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-hyper" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#1a263f"/>
+                                <stop offset="100%" stop-color="#0b0f19"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-hyper)"/>
+                        <path d="M100 35c-20 0-30 15-30 30 0 10 5 15 5 20 0 5-5 5-5 10s10 5 15 0 10-5 15-5 10 5 15 5 15 0 15-5-5-5-5-10 5-10 5-20c0-15-10-30-30-30zm-10 25c-3 0-5-2-5-5s2-5 5-5 5 2 5 5-2 5-5 5zm20 0c-3 0-5-2-5-5s2-5 5-5 5 2 5 5-2 5-5 5z" fill="#ffffff" opacity="0.9" filter="drop-shadow(0px 0px 8px rgba(255,255,255,0.4))"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="4" text-anchor="middle" opacity="0.9">HYPER</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                        <span class="badge badge-client">Client</span>
+                    </div>
                 </div>
                 <div class="portfolio-info">
-                    <h3>Brand Identity Design</h3>
-                    <p>Complete brand identity for a tech startup</p>
-                    <span class="portfolio-category">Graphic Design</span>
+                    <span class="portfolio-subtitle">Illustrator | Vector Art</span>
+                    <h3>Hyper Wallpaper</h3>
+                    <p>A custom design for competitive players with elements from Apex & Valorant.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Wallpaper</span>
+                        <span class="tag-pill">Desktop</span>
+                        <span class="tag-pill">Vector Art</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="portfolio-item" data-category="web">
+            <!-- Project 2: Midas Networks -->
+            <div class="portfolio-item" data-category="branding">
                 <div class="portfolio-image">
-                    <img src="/placeholder-project.jpg" alt="Project 2" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-midas" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#2c1a0f"/>
+                                <stop offset="100%" stop-color="#140b06"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-midas)"/>
+                        <path d="M100 35 L120 50 L115 80 L100 90 L85 80 L80 50 Z" fill="none" stroke="#ff9f43" stroke-width="3" filter="drop-shadow(0px 0px 6px rgba(255,159,67,0.6))"/>
+                        <path d="M90 55 L100 47 L110 55 L105 70 L95 70 Z" fill="#ff9f43" opacity="0.8"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="12" fill="#ff9f43" letter-spacing="4" text-anchor="middle">MIDAS</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                        <span class="badge badge-brand">Brand</span>
+                    </div>
                 </div>
                 <div class="portfolio-info">
-                    <h3>E-Commerce Website</h3>
-                    <p>Modern online store with full functionality</p>
-                    <span class="portfolio-category">Web Development</span>
+                    <span class="portfolio-subtitle">Logo Design</span>
+                    <h3>Midas Networks</h3>
+                    <p>A multi-gaming clan/esports team based in Europe, North America, and other regions.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Gaming</span>
+                        <span class="tag-pill">Network</span>
+                        <span class="tag-pill">Brand Logo</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Project 3: Eternals Studio -->
+            <div class="portfolio-item" data-category="branding">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-eternals" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#0f2b30"/>
+                                <stop offset="100%" stop-color="#061214"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-eternals)"/>
+                        <path d="M100 32 L125 57 L100 82 L75 57 Z" fill="none" stroke="#40e0d0" stroke-width="3" filter="drop-shadow(0px 0px 8px rgba(64,224,208,0.7))"/>
+                        <circle cx="100" cy="57" r="10" fill="#8a7fd6" opacity="0.8"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="800" font-size="10" fill="#ffffff" letter-spacing="3" text-anchor="middle">ETERNALS STUDIO</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                        <span class="badge badge-brand">Brand</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Logo Design</span>
+                    <h3>Eternals Studio</h3>
+                    <p>A logo/VFX/Coding team created for developers.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Coding</span>
+                        <span class="tag-pill">Branding</span>
+                        <span class="tag-pill">Creative</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 4: Eternals VFX -->
+            <div class="portfolio-item" data-category="esports">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-vfx" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#1f1530"/>
+                                <stop offset="100%" stop-color="#0b0714"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-vfx)"/>
+                        <path d="M70 60 Q100 30 130 60 Q100 90 70 60" fill="none" stroke="#8a7fd6" stroke-width="4" filter="drop-shadow(0px 0px 8px rgba(138,127,214,0.7))"/>
+                        <path d="M130 60 Q100 30 70 60 Q100 90 130 60" fill="none" stroke="#40e0d0" stroke-width="2" filter="drop-shadow(0px 0px 6px rgba(64,224,208,0.7))"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="4" text-anchor="middle">VFX ANIMATION</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Vector Animation</span>
+                    <h3>Eternals VFX</h3>
+                    <p>A premium character and logo animation created for various competitive esports teams and organizations.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Esports</span>
+                        <span class="tag-pill">Character Animation</span>
+                        <span class="tag-pill">Logo Animation</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 5: Deceptive Esports -->
+            <div class="portfolio-item" data-category="esports">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-deceptive" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#1c1236"/>
+                                <stop offset="100%" stop-color="#0a0614"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-deceptive)"/>
+                        <path d="M100 32 L125 45 L120 75 L100 88 L80 75 L75 45 Z" fill="none" stroke="#ba54f5" stroke-width="3" filter="drop-shadow(0px 0px 6px rgba(186,84,245,0.6))"/>
+                        <text x="100" y="65" font-family="-apple-system, sans-serif" font-weight="900" font-size="24" fill="#ffffff" text-anchor="middle" opacity="0.9">D</text>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#ba54f5" letter-spacing="3" text-anchor="middle">DECEPTIVE</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>Deceptive Esports</h3>
+                    <p>A multi-gaming community organization centered around games such as Apex Legends and Call of Duty.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Gaming</span>
+                        <span class="tag-pill">Community</span>
+                        <span class="tag-pill">Esports</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 6: Team DK & Ireland -->
+            <div class="portfolio-item" data-category="esports">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-dk" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#0b2413"/>
+                                <stop offset="100%" stop-color="#040d07"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-dk)"/>
+                        <path d="M100 32 C120 32 130 40 125 70 C120 85 105 92 100 95 C95 92 80 85 75 70 C70 40 80 32 100 32 Z" fill="none" stroke="#2ecc71" stroke-width="3" filter="drop-shadow(0px 0px 8px rgba(46,204,113,0.6))"/>
+                        <text x="100" y="68" font-family="-apple-system, sans-serif" font-weight="900" font-size="20" fill="#ffffff" text-anchor="middle">DK</text>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#2ecc71" letter-spacing="3" text-anchor="middle">IRELAND</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>Team DK & Ireland</h3>
+                    <p>A multi-gaming organization that represents the spirit of Ireland and United Kingdom together.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Esports</span>
+                        <span class="tag-pill">Team</span>
+                        <span class="tag-pill">Social Media</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 7: Shrine Gaming Club -->
+            <div class="portfolio-item" data-category="sports">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-shrine" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#280c0c"/>
+                                <stop offset="100%" stop-color="#0e0404"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-shrine)"/>
+                        <path d="M75 40 L125 40 M80 40 L80 85 M120 40 L120 85 M70 48 L130 48 M90 48 L90 85 M110 48 L110 85" stroke="#e74c3c" stroke-width="3" stroke-linecap="round" filter="drop-shadow(0px 0px 6px rgba(231,76,60,0.6))"/>
+                        <circle cx="100" cy="65" r="12" fill="none" stroke="#e74c3c" stroke-width="2"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#e74c3c" letter-spacing="3" text-anchor="middle">SHRINE</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>Shrine Gaming Club</h3>
+                    <p>A new esports gaming club that participates in various esports tournaments.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Esports</span>
+                        <span class="tag-pill">Club</span>
+                        <span class="tag-pill">Tournament</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 8: HF League -->
+            <div class="portfolio-item" data-category="esports">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-hf" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#0f1f38"/>
+                                <stop offset="100%" stop-color="#050b14"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-hf)"/>
+                        <path d="M80 45 L80 80 M80 62 L100 62 M100 45 L100 80 M110 45 L125 45 M110 45 L110 80 M110 62 L120 62" stroke="#3498db" stroke-width="4" stroke-linecap="round" filter="drop-shadow(0px 0px 6px rgba(52,152,219,0.7))"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#3498db" letter-spacing="3" text-anchor="middle">HF LEAGUE</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>HF League</h3>
+                    <p>A new Esports league that runs tournaments for players worldwide.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Esports</span>
+                        <span class="tag-pill">League</span>
+                        <span class="tag-pill">VFX</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 9: Nave FPS -->
+            <div class="portfolio-item" data-category="design">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-nave" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#0e2b2a"/>
+                                <stop offset="100%" stop-color="#040e0e"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-nave)"/>
+                        <path d="M80 50 A 15 15 0 0 1 120 50 A 15 15 0 0 1 80 50" fill="none" stroke="#1abc9c" stroke-width="3" filter="drop-shadow(0px 0px 6px rgba(26,188,156,0.6))"/>
+                        <text x="100" y="58" font-family="-apple-system, sans-serif" font-weight="900" font-size="18" fill="#ffffff" text-anchor="middle">NAVE</text>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#1abc9c" letter-spacing="3" text-anchor="middle">STREAMER</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>Nave FPS</h3>
+                    <p>A variety streamer turned game developer.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Streamer</span>
+                        <span class="tag-pill">Game Dev</span>
+                        <span class="tag-pill">Layouts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 10: YouTube Thumbnails -->
+            <div class="portfolio-item" data-category="design">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad-thumb" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ff4655"/>
+                                <stop offset="100%" stop-color="#111723"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-thumb)"/>
+                        <text x="30" y="50" font-family="-apple-system, sans-serif" font-weight="900" font-size="16" fill="#ffffff" transform="skewX(-10)">VALORANT</text>
+                        <text x="30" y="75" font-family="-apple-system, sans-serif" font-weight="900" font-size="20" fill="#ffffff" transform="skewX(-10)" filter="drop-shadow(0px 0px 8px rgba(255,70,85,0.8))">TEAM TAPE</text>
+                        <path d="M150 30 L180 80 L140 100 Z" fill="#ffffff" opacity="0.15"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="10" fill="#ffffff" letter-spacing="3" text-anchor="middle" opacity="0.6">THUMBNAIL DESIGN</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Thumbnail Design</span>
+                    <h3>YouTube Thumbnails</h3>
+                    <p>Visuals created to help align and draw audiences to particular video content.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Design</span>
+                        <span class="tag-pill">YouTube</span>
+                        <span class="tag-pill">Thumbnails</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 11: 3D Work Collection -->
             <div class="portfolio-item" data-category="3d">
                 <div class="portfolio-image">
-                    <img src="/placeholder-project.jpg" alt="Project 3" onerror="this.style.background='linear-gradient(135deg, #40e0d0 0%, #8a7fd6 100%)'">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-3d" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#24103f"/>
+                                <stop offset="100%" stop-color="#0a0414"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-3d)"/>
+                        <path d="M60 70 C60 40 100 40 100 60 C100 80 140 80 140 50 C140 20 100 20 100 40 C100 60 60 60 60 70 Z" fill="none" stroke="#9b59b6" stroke-width="4" filter="drop-shadow(0px 0px 8px rgba(155,89,182,0.8))"/>
+                        <path d="M60 70 C60 40 100 40 100 60" fill="none" stroke="#00f2fe" stroke-width="2"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="800" font-size="10" fill="#ffffff" letter-spacing="3" text-anchor="middle">3D SHOWCASE</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
                 </div>
                 <div class="portfolio-info">
-                    <h3>Product Visualization</h3>
-                    <p>Photorealistic 3D product renders</p>
-                    <span class="portfolio-category">3D Modeling</span>
+                    <span class="portfolio-subtitle">3D Modeling</span>
+                    <h3>3D Work Collection</h3>
+                    <p>This is our selection of completed 3D work.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">3D</span>
+                        <span class="tag-pill">Rendering</span>
+                        <span class="tag-pill">Showcase</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="portfolio-item" data-category="animation">
+            <!-- Project 12: Clone Wars -->
+            <div class="portfolio-item" data-category="illustration">
                 <div class="portfolio-image">
-                    <img src="/placeholder-project.jpg" alt="Project 4" onerror="this.style.background='linear-gradient(135deg, #8a7fd6 0%, #40e0d0 100%)'">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad-clone" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#2c3e50"/>
+                                <stop offset="100%" stop-color="#0f171e"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grad-clone)"/>
+                        <path d="M100 30 C85 30 75 40 75 60 L75 85 L85 85 L90 75 L110 75 L115 85 L125 85 L125 60 C125 40 115 30 100 30 Z M90 50 L110 50 L110 55 L90 55 Z" fill="none" stroke="#bdc3c7" stroke-width="3" filter="drop-shadow(0px 0px 6px rgba(255,255,255,0.4))"/>
+                        <path d="M100 55 L100 70" stroke="#ff4655" stroke-width="2" filter="drop-shadow(0px 0px 4px #ff4655)"/>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#bdc3c7" letter-spacing="3" text-anchor="middle">CLONE WARS</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-featured">Featured</span>
+                        <span class="badge badge-client">Client</span>
+                    </div>
                 </div>
                 <div class="portfolio-info">
-                    <h3>Motion Graphics</h3>
-                    <p>Engaging animated content for social media</p>
-                    <span class="portfolio-category">Animation</span>
+                    <span class="portfolio-subtitle">Film Production</span>
+                    <h3>Clone Wars</h3>
+                    <p>A CGI animation film that specialized in Star Wars. The Clone Wars ending and animations.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Animation</span>
+                        <span class="tag-pill">Star Wars</span>
+                        <span class="tag-pill">CGI Film</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project 13: Esports Banners -->
+            <div class="portfolio-item" data-category="design">
+                <div class="portfolio-image">
+                    <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad-banner" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#8a7fd6"/>
+                                <stop offset="100%" stop-color="#40e0d0"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="#111116"/>
+                        <rect x="10" y="30" width="180" height="50" fill="url(#grad-banner)" rx="4" opacity="0.85" filter="drop-shadow(0px 0px 6px rgba(138,127,214,0.5))"/>
+                        <circle cx="40" cy="55" r="15" fill="#111" opacity="0.5"/>
+                        <text x="100" y="60" font-family="-apple-system, sans-serif" font-weight="900" font-size="12" fill="#ffffff" letter-spacing="2" text-anchor="middle">ESPORTS BANNER</text>
+                        <text x="100" y="108" font-family="-apple-system, sans-serif" font-weight="900" font-size="11" fill="#40e0d0" letter-spacing="3" text-anchor="middle">BANNER DESIGN</text>
+                    </svg>
+                    <div class="portfolio-badges">
+                        <span class="badge badge-client">Client</span>
+                    </div>
+                </div>
+                <div class="portfolio-info">
+                    <span class="portfolio-subtitle">Social Media</span>
+                    <h3>Esports Banners</h3>
+                    <p>Banners created for all platforms to promote brand identities.</p>
+                    <div class="portfolio-tags">
+                        <span class="tag-pill">Banners</span>
+                        <span class="tag-pill">Esports</span>
+                        <span class="tag-pill">Branding</span>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="portfolio-cta">
-            <h2>Like what you see?</h2>
-            <p>Let's create something amazing together</p>
-            <button class="cta-button" onclick="window.location.href='/Contact/contact.html'">Start Your Project →</button>
+        <section class="cta-banner-section">
+            <div class="cta-banner-card">
+                <h2>Ready to Start Your Project?</h2>
+                <p>Let's discuss how we can help bring your vision to life. Get in touch for a free consultation and quote.</p>
+                <div class="cta-banner-buttons">
+                    <button class="cta-banner-btn primary-btn" onclick="window.location.href='/Contact/contact.html'">Start Your Project →</button>
+                    <button class="cta-banner-btn secondary-btn" onclick="window.location.href='/Portfolio/portfolio.html'">View Portfolio</button>
+                </div>
+            </div>
         </section>
     </main>
+
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section footer-brand">
+                <div class="footer-logo">
+                    <div class="logo-icon">◆</div>
+                    <span class="logo-text">Eternals Studio</span>
+                </div>
+                <p class="footer-tagline">Professional graphic design, web development, and creative solutions for your business needs.</p>
+                <div class="social-links">
+                    <a href="#" aria-label="Instagram">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Discord">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+                        </svg>
+                    </a>
+                    <a href="#" aria-label="Twitter">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <h3>Services</h3>
+                <ul>
+                    <li><a href="/Services/services.html">Graphic Design</a></li>
+                    <li><a href="/Services/services.html">Web Development</a></li>
+                    <li><a href="/Services/services.html">Motion Graphics</a></li>
+                    <li><a href="/Services/services.html">Branding</a></li>
+                    <li><a href="/Services/services.html">3D Modeling</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h3>Company</h3>
+                <ul>
+                    <li><a href="/About/about.html">About Us</a></li>
+                    <li><a href="/Portfolio/portfolio.html">Portfolio</a></li>
+                    <li><a href="/Store/store.html">Store</a></li>
+                    <li><a href="/Contact/contact.html">Contact</a></li>
+                </ul>
+                <h3 class="footer-subsection">FAQ</h3>
+                <ul>
+                    <li><a href="#">Pricing & Packages</a></li>
+                    <li><a href="#">Project Timeline</a></li>
+                    <li><a href="#">Revisions Policy</a></li>
+                    <li><a href="#">File Formats</a></li>
+                    <li><a href="#">Support & Maintenance</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section footer-contact">
+                <h3>Contact</h3>
+                <ul>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="m3 8 9 6 9-6"/>
+                        </svg>
+                        <a href="mailto:Eternalsanctuarygg@gmail.com">Eternalsanctuarygg@gmail.com</a>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        <a href="tel:+12405233976">(240) 523-3976</a>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span>24/7 Support Available</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 Eternals Studio. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
 
     <script src="/components/navbar/navbar.js"></script>
     <script src="portfolio.js"></script>

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Services page loaded');
     
     initializeServiceCards();
-    animateServiceCards();
+    animateElementsOnScroll();
 });
 
 function initializeServiceCards() {
@@ -20,24 +20,34 @@ function initializeServiceCards() {
     });
 }
 
-function animateServiceCards() {
-    const cards = document.querySelectorAll('.service-card');
+function animateElementsOnScroll() {
+    const animatedElements = document.querySelectorAll('.service-card, .process-step, .industry-card, .cta-banner-card');
     
     const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry, index) => {
+        entries.forEach((entry) => {
             if (entry.isIntersecting) {
-                setTimeout(() => {
+                // Apply a slight delay to create a stagger effect for items in grids
+                const parentGrid = entry.target.parentElement;
+                if (parentGrid && (parentGrid.classList.contains('process-grid') || parentGrid.classList.contains('industries-grid') || parentGrid.classList.contains('services-grid'))) {
+                    const siblings = Array.from(parentGrid.children);
+                    const index = siblings.indexOf(entry.target);
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, index * 80);
+                } else {
                     entry.target.style.opacity = '1';
                     entry.target.style.transform = 'translateY(0)';
-                }, index * 100);
+                }
+                observer.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05, rootMargin: '0px 0px -50px 0px' });
     
-    cards.forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(card);
+    animatedElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(40px)';
+        el.style.transition = 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
+        observer.observe(el);
     });
 }
