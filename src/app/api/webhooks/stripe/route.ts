@@ -27,9 +27,8 @@ export async function POST(req: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     
-    const userId = session.metadata?.userId || '';
+        const userId = session.metadata?.userId || '';
     const userEmail = session.metadata?.userEmail || '';
-    const productNamesStr = session.metadata?.productNames || '';
     const totalAmount = (session.amount_total || 0) / 100; // Cents to dollars
     const stripeSessionId = session.id;
 
@@ -49,12 +48,14 @@ export async function POST(req: Request) {
 
       if (orderError) throw orderError;
 
-      // 2. Write the individual order items
-      const productNames = productNamesStr.split(', ');
-      const orderItems = productNames.map(name => ({
+      // 2. Retrieve actual line items from Stripe API
+      const lineItems = await stripe.checkout.sessions.listLineItems(stripeSessionId);
+
+      // 3. Write the individual order items
+      const orderItems = lineItems.data.map(item => ({
         order_id: orderData.id,
-        product_name: name,
-        price: totalAmount / productNames.length, // Split total or estimate item price
+        product_name: item.description || 'Premium Digital Resource',
+        price: (item.amount_total || 0) / 100, // Cents to dollars
       }));
 
       const { error: itemsError } = await supabaseAdmin

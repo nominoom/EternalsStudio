@@ -7,6 +7,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
 import { ShoppingCart, Tag, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 interface Product {
   id: string;
@@ -34,9 +35,8 @@ function StoreContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filter, setFilter] = useState<string>('all');
-  const [cart, setCart] = useState<Product[]>([]);
-  const [checkoutLoading, setCheckoutLoading] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
+  const { cart, addToCart, removeFromCart, clearCart, checkoutLoading, handleCheckout } = useCart();
 
   const fallbackProducts: Product[] = [
     { id: '1', name: 'Website Template Pack', description: 'Modern, responsive website templates built with React and Tailwind.', price: 49.99, category: 'templates' },
@@ -68,68 +68,9 @@ function StoreContent() {
     // Check url search parameters for payment notifications
     if (searchParams.get('success')) {
       setShowSuccess(true);
-      setCart([]); // Clear cart
-      localStorage.removeItem('eternalsCart');
+      clearCart();
     }
   }, [searchParams]);
-
-  // Load cart from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('eternalsCart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  const saveCart = (newCart: Product[]) => {
-    setCart(newCart);
-    localStorage.setItem('eternalsCart', JSON.stringify(newCart));
-  };
-
-  const addToCart = (product: Product) => {
-    if (cart.some(item => item.id === product.id)) {
-      alert(`${product.name} is already in your cart.`);
-      return;
-    }
-    const newCart = [...cart, product];
-    saveCart(newCart);
-  };
-
-  const removeFromCart = (id: string) => {
-    const newCart = cart.filter(item => item.id !== id);
-    saveCart(newCart);
-  };
-
-  const handleCheckout = async () => {
-    if (!isSignedIn) {
-      alert('Please Sign In to complete your purchase.');
-      window.location.href = `/sign-in?redirect_url=${window.location.href}`;
-      return;
-    }
-
-    setCheckoutLoading(true);
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url; // Redirect to Stripe
-      } else {
-        throw new Error(data.error || 'Failed to initiate checkout');
-      }
-    } catch (err: any) {
-      alert(err.message || 'Checkout failed');
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
 
   const categories = [
     { value: 'all', label: 'All Products' },
@@ -192,99 +133,43 @@ function StoreContent() {
           </div>
         </section>
 
-        {/* Catalog and Cart Split Layout */}
-        <section className="mx-auto max-w-7xl relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
-          {/* Catalog grid */}
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((prod) => (
-              <div
-                key={prod.id}
-                className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
-                {/* Visual Cover placeholder */}
-                <div className="aspect-[5/3] w-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 flex items-center justify-center relative">
-                  <Sparkles size={40} className="text-teal-500/40" />
-                  <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-wider bg-teal-500 text-white px-2.5 py-1 rounded-md">
-                    {prod.category}
-                  </span>
-                </div>
-
-                {/* Details */}
-                <div className="p-6 flex flex-col gap-3">
-                  <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 group-hover:text-teal-500 transition-colors">
-                    {prod.name}
-                  </h3>
-                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 min-h-[36px]">
-                    {prod.description}
-                  </p>
-                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
-                    <span className="font-extrabold text-base text-slate-800 dark:text-slate-200">
-                      ${prod.price.toFixed(2)}
-                    </span>
-                    <button
-                      onClick={() => addToCart(prod)}
-                      className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Cart Sidebar panel */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-6 shadow-sm flex flex-col gap-5 sticky top-24">
-              <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <ShoppingCart size={18} className="text-teal-500" />
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
-                  Cart Summary
-                </h3>
-                <span className="ml-auto text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full">
-                  {cart.length}
+        {/* Catalog Grid */}
+        <section className="mx-auto max-w-7xl relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredProducts.map((prod) => (
+            <div
+              key={prod.id}
+              className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              {/* Visual Cover placeholder */}
+              <div className="aspect-[5/3] w-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 flex items-center justify-center relative">
+                <Sparkles size={40} className="text-teal-500/40" />
+                <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-wider bg-teal-500 text-white px-2.5 py-1 rounded-md">
+                  {prod.category}
                 </span>
               </div>
 
-              {cart.length === 0 ? (
-                <p className="text-xs font-medium text-slate-400 text-center py-6">Your shopping cart is currently empty.</p>
-              ) : (
-                <>
-                  <div className="flex flex-col gap-3 max-h-60 overflow-y-auto">
-                    {cart.map(item => (
-                      <div key={item.id} className="flex justify-between items-center text-xs font-medium border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                        <div className="flex flex-col">
-                          <span className="text-slate-800 dark:text-slate-200 font-bold">{item.name}</span>
-                          <span className="text-[10px] text-slate-400">${item.price.toFixed(2)}</span>
-                        </div>
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-red-500 hover:underline text-[10px]"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-between items-center font-bold text-sm text-slate-900 dark:text-slate-100 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <span>Total:</span>
-                    <span>${cartTotal.toFixed(2)}</span>
-                  </div>
-
+              {/* Details */}
+              <div className="p-6 flex flex-col gap-3">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 group-hover:text-teal-500 transition-colors">
+                  {prod.name}
+                </h3>
+                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 min-h-[36px]">
+                  {prod.description}
+                </p>
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                  <span className="font-extrabold text-base text-slate-800 dark:text-slate-200">
+                    ${prod.price.toFixed(2)}
+                  </span>
                   <button
-                    onClick={handleCheckout}
-                    disabled={checkoutLoading}
-                    className="w-full text-center rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 text-white font-bold text-sm py-2.5 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                    onClick={() => addToCart(prod)}
+                    className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
                   >
-                    {checkoutLoading ? 'Processing...' : 'Proceed to Checkout'}
+                    Add to Cart
                   </button>
-                </>
-              )}
+                </div>
+              </div>
             </div>
-          </div>
-
+          ))}
         </section>
       </main>
 

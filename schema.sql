@@ -68,3 +68,19 @@ INSERT INTO public.products (name, description, price, category, image_url) VALU
 ('Social Media Templates', 'Instagram grid grids, YouTube headers, and Twitter templates.', 24.99, 'templates', ''),
 ('Icon Pack Collection', '1000+ custom vector icons designed for UI designers.', 24.99, 'graphics', '')
 ON CONFLICT DO NOTHING;
+
+-- 5. QuickBooks OAuth Tokens Table
+CREATE TABLE IF NOT EXISTS public.quickbooks_tokens (
+    id INT PRIMARY KEY DEFAULT 1,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    refresh_expires_at TIMESTAMPTZ NOT NULL,
+    realm_id TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    CONSTRAINT single_row CHECK (id = 1)
+);
+
+-- Enable RLS for QuickBooks Tokens (Admin-only readable but let service bypass it)
+ALTER TABLE public.quickbooks_tokens ENABLE ROW LEVEL SECURITY;
+

@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { ShoppingCart, Moon, Sun, ArrowRight } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, isSignedIn } = useUser();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { cart, toggleCart } = useCart();
 
   // Load theme preference on mount
   useEffect(() => {
@@ -91,13 +93,18 @@ export default function Navbar() {
           </button>
 
           {/* Cart Button */}
-          <Link
-            href="/store"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 relative"
+          <button
+            onClick={toggleCart}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 relative cursor-pointer"
             aria-label="Cart"
           >
             <ShoppingCart size={18} />
-          </Link>
+            {cart.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-[10px] font-black text-white shadow-sm shadow-teal-500/30">
+                {cart.length}
+              </span>
+            )}
+          </button>
 
           {/* Clerk Auth Integrations */}
           <div className="flex items-center gap-3">
