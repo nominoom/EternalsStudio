@@ -45,6 +45,7 @@ function StoreContent() {
     { id: '4', name: 'Color Grading Presets', description: 'Professional LUT presets for film and video grading editors.', price: 19.99, category: 'presets' },
     { id: '5', name: 'Social Media Templates', description: 'Instagram grid layouts, YouTube headers, and Twitter templates.', price: 24.99, category: 'templates' },
     { id: '6', name: 'Icon Pack Collection', description: '1000+ custom vector icons designed for UI designers.', price: 24.99, category: 'graphics' },
+    { id: '7', name: 'Test Product ($1)', description: 'A test product for verifying checkout configuration.', price: 1.00, category: 'presets' },
   ];
 
   // Fetch products from database, fall back if credentials are dummy

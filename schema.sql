@@ -66,7 +66,8 @@ INSERT INTO public.products (name, description, price, category, image_url) VALU
 ('3D Model Collection', 'High-quality 3D assets for digital renders and overlays.', 79.99, 'assets', ''),
 ('Color Grading Presets', 'Professional LUT presets for film and video grading editors.', 19.99, 'presets', ''),
 ('Social Media Templates', 'Instagram grid grids, YouTube headers, and Twitter templates.', 24.99, 'templates', ''),
-('Icon Pack Collection', '1000+ custom vector icons designed for UI designers.', 24.99, 'graphics', '')
+('Icon Pack Collection', '1000+ custom vector icons designed for UI designers.', 24.99, 'graphics', ''),
+('Test Product ($1)', 'A test product for verifying checkout configuration.', 1.00, 'presets', '')
 ON CONFLICT DO NOTHING;
 
 -- 5. QuickBooks OAuth Tokens Table
