@@ -4,7 +4,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
-export default async function proxy(req: NextRequest, event: NextFetchEvent): Promise<Response> {
+export default async function middleware(req: NextRequest, event: NextFetchEvent): Promise<Response> {
   try {
     const isPlaceholder = !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
                           process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder') || 
