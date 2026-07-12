@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { CartProvider } from "../context/CartContext";
 import CartDrawer from "../components/CartDrawer";
+import BubbleBackground from "../components/BubbleBackground";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50`}>
           <CartProvider>
+            <BubbleBackground />
             {children}
             <CartDrawer />
           </CartProvider>
