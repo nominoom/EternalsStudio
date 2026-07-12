@@ -45,7 +45,7 @@ export default function Home() {
     <>
       <Navbar />
 
-      <main className="flex-1 relative overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 py-16 px-6 sm:px-8">
+      <main className="flex-1 relative overflow-hidden bg-transparent text-slate-900 dark:text-slate-50 py-16 px-6 sm:px-8">
         {/* Background Neon Blobs */}
         <div className="absolute top-[-100px] left-[-100px] w-96 h-96 rounded-full bg-teal-400/20 dark:bg-teal-500/10 blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[-100px] right-[-100px] w-96 h-96 rounded-full bg-indigo-400/20 dark:bg-indigo-500/10 blur-[100px] pointer-events-none" />

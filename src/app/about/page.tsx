@@ -28,7 +28,7 @@ export default function About() {
     <>
       <Navbar />
 
-      <main className="flex-1 relative overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 py-16 px-6 sm:px-8">
+      <main className="flex-1 relative overflow-hidden bg-transparent text-slate-900 dark:text-slate-50 py-16 px-6 sm:px-8">
         
         {/* Banner Section */}
         <section className="mx-auto max-w-7xl relative z-10 mb-16">

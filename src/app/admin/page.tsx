@@ -277,7 +277,7 @@ export default function AdminDashboard() {
   return (
     <>
       <Navbar />
-      <main className="flex-1 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 py-12 px-6 sm:px-8">
+      <main className="flex-1 bg-transparent text-slate-900 dark:text-slate-50 py-12 px-6 sm:px-8">
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
