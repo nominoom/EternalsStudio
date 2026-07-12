@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { supabaseAdmin } from '../../lib/supabase';
 import { ShieldAlert, DollarSign, ListOrdered, Mail, CheckCircle2, CircleDot } from 'lucide-react';
 
 interface Order {
@@ -55,16 +54,22 @@ export default function AdminDashboard() {
 
     async function fetchData() {
       try {
-        const { data: dbOrders } = await supabaseAdmin.from('orders').select('*').order('created_at', { ascending: false });
-        const { data: dbMessages } = await supabaseAdmin.from('contact_messages').select('*').order('created_at', { ascending: false });
+        const response = await fetch('/api/admin/data');
+        const data = await response.json();
 
-        if (dbOrders && dbOrders.length > 0) setOrders(dbOrders);
-        else setOrders(mockOrders);
+        if (data.orders && data.orders.length > 0) {
+          setOrders(data.orders);
+        } else {
+          setOrders(mockOrders);
+        }
 
-        if (dbMessages && dbMessages.length > 0) setMessages(dbMessages);
-        else setMessages(mockMessages);
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages);
+        } else {
+          setMessages(mockMessages);
+        }
       } catch (err) {
-        console.log('Using local fallback admin details');
+        console.log('Using local fallback admin details:', err);
         setOrders(mockOrders);
         setMessages(mockMessages);
       } finally {
