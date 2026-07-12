@@ -34,5 +34,7 @@ export const config = {
     '/((?!_next|[^?]*\\.[\\w]+$|_next/image|favicon.ico).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
+    '/__clerk/:path*',
   ],
 };
+
