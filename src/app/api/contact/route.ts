@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '../../../lib/supabase';
+import { logEvent } from '../../../lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
@@ -54,9 +55,19 @@ export async function POST(req: Request) {
       console.warn('Email transmission failed:', mailErr.message);
     }
 
+    // Log the successful contact submission event
+    await logEvent(
+      'evt_contact_message_received',
+      'contact',
+      'success',
+      `Contact message received from ${fullName} <${email}>.`,
+      { name: fullName, email, subject: mailSubject, company: company || 'N/A' }
+    );
+
     return NextResponse.json({ success: true, message: 'Message sent successfully' });
   } catch (error: any) {
     console.error('Contact Submission Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

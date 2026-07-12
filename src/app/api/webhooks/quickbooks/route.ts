@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { quickbooksRequest } from '../../../../lib/quickbooks';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { logEvent } from '../../../../lib/logger';
 
 const WEBHOOK_VERIFIER = process.env.QUICKBOOKS_WEBHOOK_VERIFIER || '';
 
@@ -18,6 +19,13 @@ export async function POST(req: Request) {
 
     if (hash !== signature) {
       console.warn('QuickBooks Webhook Signature verification failed.');
+      await logEvent(
+        'evt_qb_webhook_error',
+        'quickbooks',
+        'warning',
+        `QuickBooks webhook signature verification failed.`,
+        { signature }
+      );
       return NextResponse.json({ error: 'Signature verification failed' }, { status: 400 });
     }
   }
@@ -30,6 +38,16 @@ export async function POST(req: Request) {
   }
 
   const notifications = payload.eventNotifications || [];
+
+  if (notifications.length > 0) {
+    await logEvent(
+      'evt_qb_webhook_recv',
+      'quickbooks',
+      'info',
+      `QuickBooks webhook notifications received (notifications: ${notifications.length}).`,
+      { payload_snippet: notifications.map((n: any) => n.realmId) }
+    );
+  }
 
   for (const notification of notifications) {
     const entities = notification.dataChangeEvent?.entities || [];
@@ -59,6 +77,14 @@ export async function POST(req: Request) {
 
             if (dbError) throw dbError;
             console.log(`Order status updated to completed for invoice ID ${entityId}`);
+            
+            await logEvent(
+              'evt_qb_invoice_paid',
+              'quickbooks',
+              'success',
+              `QuickBooks Invoice ${entityId} balance is $0.00. Supabase order completed.`,
+              { invoice_id: entityId, balance, totalAmt }
+            );
           }
         } 
         else if (entityName === 'Payment') {
@@ -77,13 +103,29 @@ export async function POST(req: Request) {
 
             if (dbError) throw dbError;
             console.log(`Order status updated to completed for linked invoice ID ${linkedTxnId} via Payment webhook`);
+            
+            await logEvent(
+              'evt_qb_payment_success',
+              'quickbooks',
+              'success',
+              `QuickBooks Payment ${entityId} allocated. Supabase order completed for invoice ID ${linkedTxnId}.`,
+              { payment_id: entityId, invoice_id: linkedTxnId }
+            );
           }
         }
       } catch (err: any) {
         console.error(`Error processing QuickBooks webhook entity ID ${entityId}:`, err.message);
+        await logEvent(
+          'evt_qb_webhook_error',
+          'quickbooks',
+          'error',
+          `Failed to process QuickBooks webhook event for entity ${entityName} (${entityId}): ${err.message}`,
+          { error: err.message, entity_id: entityId, entity_name: entityName, operation }
+        );
       }
     }
   }
 
   return NextResponse.json({ received: true });
 }
+

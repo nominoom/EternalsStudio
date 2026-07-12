@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '../../../../lib/supabase';
+import { logEvent } from '../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
   apiVersion: '2025-01-27.academics' as any,
@@ -18,8 +19,24 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
+    
+    // Log successful webhook verification
+    await logEvent(
+      'evt_stripe_webhook_recv',
+      'stripe',
+      'info',
+      `Stripe webhook event verified: ${event.type}`,
+      { event_id: event.id, type: event.type }
+    );
   } catch (err: any) {
     console.error(`Webhook signature verification failed:`, err.message);
+    await logEvent(
+      'evt_stripe_webhook_error',
+      'stripe',
+      'error',
+      `Stripe signature verification failed: ${err.message}`,
+      { error: err.message }
+    );
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
@@ -27,7 +44,7 @@ export async function POST(req: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     
-        const userId = session.metadata?.userId || '';
+    const userId = session.metadata?.userId || '';
     const userEmail = session.metadata?.userEmail || '';
     const totalAmount = (session.amount_total || 0) / 100; // Cents to dollars
     const stripeSessionId = session.id;
@@ -65,11 +82,33 @@ export async function POST(req: Request) {
       if (itemsError) throw itemsError;
 
       console.log(`Successfully logged Stripe order for User ${userId}`);
+      
+      // Log successful order database writing
+      await logEvent(
+        'evt_stripe_order_logged',
+        'stripe',
+        'success',
+        `Stripe order successfully written to Supabase for ${userEmail}.`,
+        {
+          order_id: orderData.id,
+          user_id: userId,
+          total_amount: totalAmount,
+          items_count: orderItems.length,
+        }
+      );
     } catch (dbError: any) {
       console.error('Database logging error inside Stripe Webhook:', dbError.message);
+      await logEvent(
+        'evt_stripe_webhook_error',
+        'stripe',
+        'error',
+        `Failed to store Stripe order records in database: ${dbError.message}`,
+        { error: dbError.message, user_email: userEmail, stripe_session_id: stripeSessionId }
+      );
       return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
   }
 
   return NextResponse.json({ received: true });
 }
+

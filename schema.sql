@@ -84,3 +84,18 @@ CREATE TABLE IF NOT EXISTS public.quickbooks_tokens (
 -- Enable RLS for QuickBooks Tokens (Admin-only readable but let service bypass it)
 ALTER TABLE public.quickbooks_tokens ENABLE ROW LEVEL SECURITY;
 
+-- 6. System Events Table (For tracking deployments, webhooks, and audit logs)
+CREATE TABLE IF NOT EXISTS public.system_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_key TEXT NOT NULL,
+    category TEXT NOT NULL, -- 'deployment', 'stripe', 'quickbooks', 'database', 'auth'
+    status TEXT NOT NULL, -- 'info', 'success', 'warning', 'error'
+    message TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Enable RLS for System Events
+ALTER TABLE public.system_events ENABLE ROW LEVEL SECURITY;
+
+
