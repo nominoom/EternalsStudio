@@ -5,12 +5,12 @@ import { logEvent } from '../../../lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
     const { firstName, lastName, email, company, subject, message } = await req.json();
 
     if (!firstName || !lastName || !email || !message) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 }) as unknown as Response;
     }
 
     const fullName = `${firstName} ${lastName}`;
@@ -64,10 +64,11 @@ export async function POST(req: Request) {
       { name: fullName, email, subject: mailSubject, company: company || 'N/A' }
     );
 
-    return NextResponse.json({ success: true, message: 'Message sent successfully' });
+    return NextResponse.json({ success: true, message: 'Message sent successfully' }) as unknown as Response;
   } catch (error: any) {
     console.error('Contact Submission Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+
 

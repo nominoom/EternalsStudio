@@ -2,24 +2,24 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { logEvent } from '../../../../lib/logger';
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
     // 1. Authenticate with Clerk
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
     }
 
     // 2. Validate administrator privileges
     const isAdmin = user.publicMetadata?.role === 'admin';
     if (!isAdmin) {
-      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 }) as unknown as Response;
     }
 
     // 3. Parse step from payload
     const { step } = await req.json();
     if (!step || !['initiated', 'building', 'success', 'failed'].includes(step)) {
-      return NextResponse.json({ error: 'Invalid or missing step payload' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid or missing step payload' }, { status: 400 }) as unknown as Response;
     }
 
     let eventKey = '';
@@ -72,9 +72,10 @@ export async function POST(req: Request) {
     // 4. Log the event to Supabase/Console
     const eventLog = await logEvent(eventKey, 'deployment', status, message, metadata);
 
-    return NextResponse.json({ success: true, event: eventLog });
+    return NextResponse.json({ success: true, event: eventLog }) as unknown as Response;
   } catch (error: any) {
     console.error('Deployment API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+

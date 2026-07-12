@@ -8,18 +8,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_
   apiVersion: '2025-01-27.academics' as any,
 });
 
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<Response> {
   try {
     // 1. Authenticate with Clerk
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
     }
 
     // 2. Validate administrator privileges
     const isAdmin = user.publicMetadata?.role === 'admin';
     if (!isAdmin) {
-      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 }) as unknown as Response;
     }
 
     // 3. Log admin access audit event
@@ -83,10 +83,11 @@ export async function GET(req: Request) {
       orders: stripeOrders,
       messages: contactMessages,
       events: systemEvents,
-    });
+    }) as unknown as Response;
   } catch (error: any) {
     console.error('Admin API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+
 

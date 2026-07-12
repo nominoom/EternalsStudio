@@ -6,7 +6,7 @@ import { logEvent } from '../../../../lib/logger';
 
 const WEBHOOK_VERIFIER = process.env.QUICKBOOKS_WEBHOOK_VERIFIER || '';
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
   const signature = req.headers.get('intuit-signature') || '';
 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         `QuickBooks webhook signature verification failed.`,
         { signature }
       );
-      return NextResponse.json({ error: 'Signature verification failed' }, { status: 400 });
+      return NextResponse.json({ error: 'Signature verification failed' }, { status: 400 }) as unknown as Response;
     }
   }
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   try {
     payload = JSON.parse(body);
   } catch (e) {
-    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 }) as unknown as Response;
   }
 
   const notifications = payload.eventNotifications || [];
@@ -126,6 +126,7 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true }) as unknown as Response;
 }
+
 

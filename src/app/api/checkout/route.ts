@@ -49,15 +49,16 @@ export async function POST(req: Request) {
       cancel_url: `${req.headers.get('origin')}/store?canceled=true`,
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url }) as unknown as Response;
   } catch (error: any) {
     console.error('Stripe Session Error:', error);
     // Return mock session URL during fallback / testing if keys are placeholders
     if (process.env.STRIPE_SECRET_KEY?.includes('placeholder')) {
       return NextResponse.json({ 
         url: `${req.headers.get('origin')}/store?success=true&mock=true` 
-      });
+      }) as unknown as Response;
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+

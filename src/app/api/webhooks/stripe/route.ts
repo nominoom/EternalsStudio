@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_
   apiVersion: '2025-01-27.academics' as any,
 });
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature') || '';
 
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       `Stripe signature verification failed: ${err.message}`,
       { error: err.message }
     );
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 }) as unknown as Response;
   }
 
   // Handle checkout.session.completed event
@@ -105,10 +105,11 @@ export async function POST(req: Request) {
         `Failed to store Stripe order records in database: ${dbError.message}`,
         { error: dbError.message, user_email: userEmail, stripe_session_id: stripeSessionId }
       );
-      return NextResponse.json({ error: dbError.message }, { status: 500 });
+      return NextResponse.json({ error: dbError.message }, { status: 500 }) as unknown as Response;
     }
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true }) as unknown as Response;
 }
+
 
