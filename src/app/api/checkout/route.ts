@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { currentUser } from '@clerk/nextjs/server';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
-  apiVersion: '2025-01-27.academics' as any, // fallback/compatibility config
+  apiVersion: '2026-06-24.dahlia', // updated to match local sdk version
 });
 
 export async function POST(req: Request) {

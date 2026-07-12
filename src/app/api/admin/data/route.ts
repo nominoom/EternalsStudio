@@ -5,7 +5,7 @@ import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
-  apiVersion: '2025-01-27.academics' as any,
+  apiVersion: '2026-06-24.dahlia',
 });
 
 export async function GET(req: Request): Promise<Response> {
