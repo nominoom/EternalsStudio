@@ -1,14 +1,24 @@
+import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Match admin dashboard route
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
-export default clerkMiddleware(async (auth, req) => {
-  // If the user tries to access /admin, force auth checks
-  if (isAdminRoute(req)) {
-    await auth.protect();
+export default function proxy(req: any, event: any) {
+  const isPlaceholder = !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+                        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder') || 
+                        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('empty');
+  
+  if (isPlaceholder) {
+    // Bypass Clerk authentication checks completely if keys are placeholder configurations
+    return NextResponse.next();
   }
-});
+
+  return clerkMiddleware(async (auth, request) => {
+    if (isAdminRoute(request)) {
+      await auth.protect();
+    }
+  })(req, event);
+}
 
 export const config = {
   matcher: [
