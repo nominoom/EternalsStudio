@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { ProjectRequest, dbConnect } from '../../../lib/db';
 import { logEvent } from '../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -10,31 +10,23 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing required fields: clientName, clientEmail, subject, description' }, { status: 400 }) as unknown as Response;
     }
 
+    await dbConnect();
+
     let request;
     try {
-      // Insert into project_requests table
-      const { data, error: dbError } = await supabaseAdmin
-        .from('project_requests')
-        .insert([
-          {
-            client_name: clientName,
-            client_email: clientEmail,
-            client_phone: clientPhone || '',
-            subject,
-            description,
-            file_url: fileUrl || '',
-            status: 'pending',
-          }
-        ])
-        .select()
-        .single();
-
-      if (dbError) {
-        throw dbError;
-      }
-      request = data;
+      // Insert into project_requests collection in MongoDB
+      const data = await ProjectRequest.create({
+        client_name: clientName,
+        client_email: clientEmail,
+        client_phone: clientPhone || '',
+        subject,
+        description,
+        file_url: fileUrl || '',
+        status: 'pending',
+      });
+      request = { ...data.toObject(), id: data._id.toString() };
     } catch (dbErr: any) {
-      console.warn('[Supabase Bypass] Failed to write project request to DB:', dbErr.message);
+      console.warn('[MongoDB Bypass] Failed to write project request to DB:', dbErr.message);
       // Fallback: Create mock task object so submission succeeds without DB connections
       request = {
         id: `mock-req-${Date.now()}`,
@@ -64,3 +56,4 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+
