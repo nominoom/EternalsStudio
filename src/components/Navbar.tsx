@@ -13,6 +13,7 @@ export default function Navbar() {
   const { user, isSignedIn } = useUser();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { cart, toggleCart } = useCart();
   const { hasAdminPrivileges, toggleAdminSidebar } = useAdmin();
 
@@ -53,14 +54,6 @@ export default function Navbar() {
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
-
-  if (isSignedIn) {
-    navLinks.push({ name: 'Client Dashboard', path: '/client' });
-  }
-
-  if (isTeamOrAdmin) {
-    navLinks.push({ name: 'Team Portal', path: '/team' });
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">
@@ -132,19 +125,58 @@ export default function Navbar() {
           </button>
 
           {/* Clerk Auth Integrations */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 relative">
             {isSignedIn ? (
               <>
-                {/* Check if user role matches admin to present admin link */}
-                {user?.publicMetadata?.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    className="hidden sm:inline-block text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline px-2 py-1"
-                  >
-                    Admin Panel
-                  </Link>
-                )}
+                {/* Profile Avatar and Dropdown */}
                 <UserButton />
+                <button
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="ml-1 p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+                  aria-label="Profile menu"
+                >
+                  {/* Simple chevron */}
+                  <svg
+                    className="w-4 h-4 fill-current text-gray-600 dark:text-gray-300"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5.5 7l4.5 4.5L14.5 7" stroke="currentColor" strokeWidth="2" fill="none" />
+                  </svg>
+                </button>
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg z-20">
+                    <ul className="py-1">
+                      <li>
+                        <Link
+                          href="/client"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Client Dashboard
+                        </Link>
+                      </li>
+                      {user?.publicMetadata?.role === 'team' && (
+                        <li>
+                          <Link
+                            href="/team"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            Team Portal
+                          </Link>
+                        </li>
+                      )}
+                      {user?.publicMetadata?.role === 'admin' && (
+                        <li>
+                          <Link
+                            href="/admin"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            Admin Panel
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </>
             ) : (
               <>
