@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { ArrowRight, Trash2 } from 'lucide-react';
+import { ArrowRight, Trash2, X } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { supabase } from '../../lib/supabase';
 
@@ -22,6 +22,17 @@ interface Project {
 }
 
 const STATIC_PROJECTS: Project[] = [
+  {
+    id: 'static-demo-apex',
+    title: 'Apex Predator Overlays',
+    category: 'esports',
+    subtitle: 'Stream Graphics Pack',
+    desc: 'Complete stream graphics overhaul matching the Apex Legends predator tier styling. Includes alerts, animated screens, and modular panels.',
+    tags: ['Stream Assets', 'Apex Legends', 'After Effects', 'Photoshop'],
+    badges: ['Featured', 'Demo'],
+    image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+    is_custom: false
+  },
   {
     title: 'Hyper Wallpaper',
     category: 'illustration',
@@ -142,7 +153,7 @@ const STATIC_PROJECTS: Project[] = [
       <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="grad-mascot" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#2c112e" />
+            <stop offset="0%" stopColor="#2c1a2e" />
             <stop offset="100%" stopColor="#110512" />
           </radialGradient>
         </defs>
@@ -273,6 +284,7 @@ export default function Portfolio() {
   const [dbProjects, setDbProjects] = useState<Project[]>([]);
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const categories = [
     { value: 'all', label: 'All Projects' },
@@ -311,7 +323,6 @@ export default function Portfolio() {
       }
     }
 
-    // Load local storage custom projects
     const locals = typeof window !== 'undefined'
       ? JSON.parse(localStorage.getItem('localCustomPortfolio') || '[]')
       : [];
@@ -321,18 +332,17 @@ export default function Portfolio() {
   }, [refreshKey]);
 
   // Handle Delete Portfolio Item
-  const handleDelete = async (project: Project) => {
+  const handleDelete = async (project: Project, e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid opening the details modal
     if (!project.id) return;
     if (!confirm(`Are you sure you want to delete "${project.title}" from the portfolio?`)) return;
 
     if (String(project.id).startsWith('local-')) {
-      // Local delete
       const updated = localProjects.filter(p => p.id !== project.id);
       localStorage.setItem('localCustomPortfolio', JSON.stringify(updated));
       setLocalProjects(updated);
       alert('Portfolio project deleted locally!');
     } else {
-      // Server delete
       try {
         const response = await fetch(`/api/admin/portfolio?id=${project.id}`, {
           method: 'DELETE',
@@ -341,7 +351,7 @@ export default function Portfolio() {
         if (response.ok) {
           alert('Portfolio project deleted successfully!');
           setRefreshKey(prev => prev + 1);
-          triggerCatalogRefresh(); // refresh contexts
+          triggerCatalogRefresh();
         } else {
           const data = await response.json();
           alert(data.error || 'Failed to delete portfolio project');
@@ -352,7 +362,6 @@ export default function Portfolio() {
     }
   };
 
-  // Merge dynamic items first, then static items
   const allProjects = [...dbProjects, ...localProjects, ...STATIC_PROJECTS];
 
   const filteredProjects = filter === 'all'
@@ -371,7 +380,7 @@ export default function Portfolio() {
             Our <span className="bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">Portfolio</span>
           </h1>
           <p className="text-lg font-medium text-slate-500 dark:text-slate-400 max-w-xl">
-            Explore our creative work and visual design success stories.
+            Explore our creative work and visual design success stories. Click any project card to view specs.
           </p>
         </section>
 
@@ -400,10 +409,11 @@ export default function Portfolio() {
           {filteredProjects.map((proj, i) => (
             <div
               key={proj.id || i}
-              className="group relative bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-teal-500/30"
+              onClick={() => setSelectedProject(proj)}
+              className="group relative bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-teal-500/30 cursor-pointer"
             >
               {/* Image / SVG Container */}
-              <div className="relative aspect-[5/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-955">
+              <div className="relative aspect-[5/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-950">
                 {proj.image_url ? (
                   <img
                     src={proj.image_url}
@@ -431,7 +441,7 @@ export default function Portfolio() {
                 {/* Admin Delete Action */}
                 {isAdminMode && proj.is_custom && (
                   <button
-                    onClick={() => handleDelete(proj)}
+                    onClick={(e) => handleDelete(proj, e)}
                     className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-md transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                     title="Delete portfolio project"
                   >
@@ -455,7 +465,7 @@ export default function Portfolio() {
                   {proj.tags.map((tag, j) => (
                     <span
                       key={j}
-                      className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-455 dark:text-slate-500"
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500"
                     >
                       {tag}
                     </span>
@@ -489,6 +499,107 @@ export default function Portfolio() {
         </section>
 
       </main>
+
+      {/* Interactive Project Lightbox Modal */}
+      {selectedProject && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300"
+          onClick={() => setSelectedProject(null)}
+        >
+          <div 
+            className="relative w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 max-h-[90vh] md:max-h-[85vh] animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedProject(null)}
+              className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-white/95 dark:bg-slate-950/95 text-slate-500 hover:text-slate-850 dark:hover:text-slate-200 shadow-md transition-transform active:scale-95 cursor-pointer border border-slate-200/40 dark:border-slate-800/40"
+              aria-label="Close modal"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Left Column: Media (7 columns) */}
+            <div className="md:col-span-7 bg-slate-100 dark:bg-slate-950 relative flex items-center justify-center aspect-[5/3] md:aspect-auto min-h-[280px] md:min-h-full">
+              {selectedProject.image_url ? (
+                <img
+                  src={selectedProject.image_url}
+                  alt={selectedProject.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full p-4 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                  {selectedProject.svg}
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Project details (5 columns) */}
+            <div className="md:col-span-5 p-8 flex flex-col justify-between overflow-y-auto max-h-[45vh] md:max-h-full border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                    {selectedProject.subtitle}
+                  </span>
+                  <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-50 leading-tight">
+                    {selectedProject.title}
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/30 dark:border-slate-700/30">
+                    {selectedProject.category}
+                  </span>
+                  {selectedProject.badges.map((badge, idx) => (
+                    <span 
+                      key={idx}
+                      className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Case Description</h4>
+                  <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 whitespace-pre-wrap">
+                    {selectedProject.desc}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Client</span>
+                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">Eternals Studio</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Project Date</span>
+                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">July 2026</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Technologies / Tags */}
+              <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5">
+                  Specifications & Tools
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedProject.tags.map((tag, j) => (
+                    <span
+                      key={j}
+                      className="text-[9px] font-bold px-2 py-1 rounded bg-slate-50 dark:bg-slate-950 text-slate-450 dark:text-slate-550 border border-slate-200/50 dark:border-slate-800/40"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
