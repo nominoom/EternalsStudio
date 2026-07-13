@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X } from 'lucide-react';
+import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAdmin } from '../context/AdminContext';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -13,6 +14,7 @@ export default function Navbar() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cart, toggleCart } = useCart();
+  const { hasAdminPrivileges, toggleAdminSidebar } = useAdmin();
 
   // Load theme preference on mount
   useEffect(() => {
@@ -84,6 +86,18 @@ export default function Navbar() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Admin Sidebar Toggle */}
+          {hasAdminPrivileges && (
+            <button
+              onClick={toggleAdminSidebar}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/5 text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200 cursor-pointer"
+              aria-label="Admin settings"
+              title="Open Admin Console"
+            >
+              <Shield size={18} />
+            </button>
+          )}
+
           {/* Theme Toggler */}
           <button
             onClick={toggleTheme}

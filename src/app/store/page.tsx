@@ -6,8 +6,9 @@ import { useUser } from '@clerk/nextjs';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { supabase } from '../../lib/supabase';
-import { ShoppingCart, Tag, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, Tag, Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAdmin } from '../../context/AdminContext';
 
 interface Product {
   id: string;
@@ -37,6 +38,7 @@ function StoreContent() {
   const [filter, setFilter] = useState<string>('all');
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const { cart, addToCart, removeFromCart, clearCart, checkoutLoading, handleCheckout } = useCart();
+  const { isAdminMode, catalogVersion, triggerCatalogRefresh } = useAdmin();
 
   const fallbackProducts: Product[] = [
     { id: '1', name: 'Website Template Pack', description: 'Modern, responsive website templates built with React and Tailwind.', price: 49.99, category: 'templates' },
@@ -51,17 +53,18 @@ function StoreContent() {
   // Fetch products from database, fall back if credentials are dummy
   useEffect(() => {
     async function getProducts() {
+      const localCustom = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('localCustomProducts') || '[]') : [];
       try {
         const { data, error } = await supabase.from('products').select('*');
         if (error) throw error;
         if (data && data.length > 0) {
-          setProducts(data);
+          setProducts([...data, ...localCustom]);
         } else {
-          setProducts(fallbackProducts);
+          setProducts([...fallbackProducts, ...localCustom]);
         }
       } catch (err) {
         console.log('Using local fallback products due to connection limits');
-        setProducts(fallbackProducts);
+        setProducts([...fallbackProducts, ...localCustom]);
       }
     }
     getProducts();
@@ -71,7 +74,38 @@ function StoreContent() {
       setShowSuccess(true);
       clearCart();
     }
-  }, [searchParams]);
+  }, [searchParams, catalogVersion]);
+
+  const handleDeleteProduct = async (product: Product) => {
+    if (!confirm(`Are you sure you want to delete "${product.name}"?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/products?id=${product.id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(`Successfully deleted "${product.name}"!`);
+        triggerCatalogRefresh();
+      } else {
+        throw new Error(data.error || 'Server error deleting product');
+      }
+    } catch (err: any) {
+      console.warn('API deletion failed, removing locally:', err.message);
+
+      // Fallback: Delete from local storage
+      try {
+        const localCustom = JSON.parse(localStorage.getItem('localCustomProducts') || '[]');
+        const updated = localCustom.filter((p: any) => p.id !== product.id);
+        localStorage.setItem('localCustomProducts', JSON.stringify(updated));
+        alert(`Deleted "${product.name}" locally (Supabase bypass).`);
+        triggerCatalogRefresh();
+      } catch (fallbackErr) {
+        alert('Failed to delete product locally.');
+      }
+    }
+  };
 
   const categories = [
     { value: 'all', label: 'All Products' },
@@ -161,12 +195,23 @@ function StoreContent() {
                   <span className="font-extrabold text-base text-slate-800 dark:text-slate-200">
                     ${prod.price.toFixed(2)}
                   </span>
-                  <button
-                    onClick={() => addToCart(prod)}
-                    className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Add to Cart
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {isAdminMode && (
+                      <button
+                        onClick={() => handleDeleteProduct(prod)}
+                        className="bg-red-500/15 border border-red-500/30 text-red-500 hover:bg-red-500/25 p-2 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => addToCart(prod)}
+                      className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
