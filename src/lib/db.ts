@@ -2,10 +2,6 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
 // Caching connection globally for Next.js hot-reloads and serverless execution
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -23,6 +19,10 @@ if (!global.mongooseCache) {
 const cached = global.mongooseCache;
 
 export async function dbConnect(): Promise<typeof mongoose> {
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
