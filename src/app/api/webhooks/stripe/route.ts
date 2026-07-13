@@ -44,6 +44,33 @@ export async function POST(req: Request): Promise<Response> {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     
+    const checkoutType = session.metadata?.type || '';
+    const requestId = session.metadata?.request_id || '';
+
+    if (checkoutType === 'project_invoice' && requestId) {
+      try {
+        const { error: updateError } = await supabaseAdmin
+          .from('project_requests')
+          .update({ status: 'approved' })
+          .eq('id', requestId);
+
+        if (updateError) throw updateError;
+
+        console.log(`Successfully completed payment for project request ${requestId}`);
+        await logEvent(
+          'evt_project_invoice_paid',
+          'stripe',
+          'success',
+          `Client paid invoice for project request ID: ${requestId}. Delegated to Team Portal as Open Task.`,
+          { request_id: requestId, amount: (session.amount_total || 0) / 100 }
+        );
+        return NextResponse.json({ received: true }) as unknown as Response;
+      } catch (dbError: any) {
+        console.error('Failed to update project status on webhook invoice payment:', dbError.message);
+        return NextResponse.json({ error: dbError.message }, { status: 500 }) as unknown as Response;
+      }
+    }
+
     const userId = session.metadata?.userId || '';
     const userEmail = session.metadata?.userEmail || '';
     const totalAmount = (session.amount_total || 0) / 100; // Cents to dollars

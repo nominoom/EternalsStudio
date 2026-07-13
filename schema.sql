@@ -112,6 +112,8 @@ CREATE TABLE IF NOT EXISTS public.project_requests (
     status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'claimed', 'completed'
     assigned_to_id TEXT,
     assigned_to_name TEXT,
+    invoice_url TEXT,
+    invoice_amount NUMERIC,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 

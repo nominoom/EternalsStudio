@@ -44,6 +44,10 @@ export default function Contact() {
       const data = await res.json();
       if (res.ok) {
         setShowSuccess(true);
+        if (isRequest && data.request) {
+          const localRequests = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
+          localStorage.setItem('localCustomRequests', JSON.stringify([data.request, ...localRequests]));
+        }
         setFormData({
           firstName: '',
           lastName: '',

@@ -54,6 +54,10 @@ export default function Navbar() {
     { name: 'Contact', path: '/contact' },
   ];
 
+  if (isSignedIn) {
+    navLinks.push({ name: 'Client Dashboard', path: '/client' });
+  }
+
   if (isTeamOrAdmin) {
     navLinks.push({ name: 'Team Portal', path: '/team' });
   }

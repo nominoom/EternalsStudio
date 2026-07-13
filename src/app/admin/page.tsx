@@ -83,6 +83,7 @@ export default function AdminDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [quoteAmounts, setQuoteAmounts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   // Search & Filter State for Logs
@@ -561,31 +562,77 @@ export default function AdminDashboard() {
                         </div>
 
                         {req.status === 'pending' && (
-                          <button
-                            onClick={async () => {
-                              if (!confirm('Approve this request and post it to the Team Portal?')) return;
-                              try {
-                                const response = await fetch('/api/team/tasks/approve', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ requestId: req.id })
-                                });
-                                if (response.ok) {
-                                  alert('Request successfully approved and sent to team!');
-                                  // Update local state
-                                  setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
-                                } else {
-                                  const data = await response.json();
-                                  alert(data.error || 'Failed to approve request');
-                                }
-                              } catch (e: any) {
-                                alert('Error: ' + e.message);
-                              }
-                            }}
-                            className="bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm self-start md:self-auto"
-                          >
-                            Send to Team
-                          </button>
+                          <div className="flex flex-col gap-3 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-4 bg-white dark:bg-slate-900/50 min-w-[280px]">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-black uppercase text-slate-400">Quote Price ($ USD)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="100.00"
+                                value={quoteAmounts[req.id] || ''}
+                                onChange={(e) => setQuoteAmounts(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/10 transition-all font-bold text-slate-850 dark:text-slate-150"
+                              />
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={async () => {
+                                  const price = parseFloat(quoteAmounts[req.id] || '');
+                                  if (isNaN(price) || price <= 0) {
+                                    alert('Please enter a valid price quote.');
+                                    return;
+                                  }
+                                  if (!confirm(`Approve & send invoice of $${price.toFixed(2)} to ${req.client_name}?`)) return;
+
+                                  try {
+                                    const response = await fetch('/api/admin/requests/invoice', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ requestId: req.id, amount: price })
+                                    });
+                                    const data = await response.json();
+                                    if (response.ok) {
+                                      alert('Invoice generated and sent successfully!');
+                                      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'awaiting_payment', invoice_amount: price } : r));
+                                    } else {
+                                      alert(data.error || 'Failed to invoice request');
+                                    }
+                                  } catch (e: any) {
+                                    alert('Error: ' + e.message);
+                                  }
+                                }}
+                                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer shadow-sm text-center"
+                              >
+                                Approve & Invoice Client
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  if (!confirm('Directly approve this task and send it to Team Portal for free?')) return;
+                                  try {
+                                    const response = await fetch('/api/team/tasks/approve', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ requestId: req.id })
+                                    });
+                                    if (response.ok) {
+                                      alert('Request successfully approved and sent to team!');
+                                      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
+                                    } else {
+                                      const data = await response.json();
+                                      alert(data.error || 'Failed to approve request');
+                                    }
+                                  } catch (e: any) {
+                                    alert('Error: ' + e.message);
+                                  }
+                                }}
+                                className="w-full bg-transparent border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-950 text-slate-500 font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer text-center"
+                              >
+                                Send to Team (Free)
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     ))}
