@@ -18,12 +18,23 @@ export default function AdminSidebar() {
   const [deployLoading, setDeployLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Form State
+  // Form State - Tab
+  const [adminFormTab, setAdminFormTab] = useState<'product' | 'portfolio'>('product');
+
+  // Form State - Product
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('templates');
   const [imageUrl, setImageUrl] = useState('');
+
+  // Form State - Portfolio
+  const [portTitle, setPortTitle] = useState('');
+  const [portSubtitle, setPortSubtitle] = useState('');
+  const [portCategory, setPortCategory] = useState('branding');
+  const [portDescription, setPortDescription] = useState('');
+  const [portTags, setPortTags] = useState('');
+  const [portImageUrl, setPortImageUrl] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -112,6 +123,84 @@ export default function AdminSidebar() {
         triggerCatalogRefresh();
       } catch (fallbackErr) {
         setFeedback({ type: 'error', message: 'Failed to write product locally.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadPortfolio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!portTitle || !portSubtitle || !portCategory || !portDescription) {
+      setFeedback({ type: 'error', message: 'Title, Subtitle, Category, and Description are required.' });
+      return;
+    }
+
+    setLoading(true);
+    setFeedback(null);
+
+    const tagsArray = portTags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const portfolioPayload = {
+      title: portTitle,
+      subtitle: portSubtitle,
+      category: portCategory,
+      description: portDescription,
+      tags: tagsArray,
+      image_url: portImageUrl || '',
+    };
+
+    try {
+      const response = await fetch('/api/admin/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(portfolioPayload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setFeedback({ type: 'success', message: `Successfully uploaded "${portTitle}" to portfolio!` });
+        // Clear Form
+        setPortTitle('');
+        setPortSubtitle('');
+        setPortDescription('');
+        setPortTags('');
+        setPortImageUrl('');
+        triggerCatalogRefresh();
+      } else {
+        throw new Error(data.error || 'Server error uploading portfolio project');
+      }
+    } catch (err: any) {
+      console.warn('API portfolio upload failed, adding locally to browser storage:', err.message);
+
+      // Fallback: Save in localStorage custom portfolio array
+      try {
+        const localPortfolio = JSON.parse(localStorage.getItem('localCustomPortfolio') || '[]');
+        const newProject = {
+          id: `local-proj-${Date.now()}`,
+          ...portfolioPayload,
+          badges: ['Client'],
+        };
+        localStorage.setItem('localCustomPortfolio', JSON.stringify([...localPortfolio, newProject]));
+
+        setFeedback({
+          type: 'success',
+          message: `Uploaded "${portTitle}" locally to browser storage (Supabase bypass).`,
+        });
+
+        // Clear Form
+        setPortTitle('');
+        setPortSubtitle('');
+        setPortDescription('');
+        setPortTags('');
+        setPortImageUrl('');
+        triggerCatalogRefresh();
+      } catch (fallbackErr) {
+        setFeedback({ type: 'error', message: 'Failed to write portfolio project locally.' });
       }
     } finally {
       setLoading(false);
@@ -224,85 +313,203 @@ export default function AdminSidebar() {
             </div>
           </div>
 
+          {/* Form Tabs Selector */}
+          <div className="flex border-b border-slate-200/40 dark:border-slate-800/40 pb-1 mt-2">
+            <button
+              onClick={() => { setAdminFormTab('product'); setFeedback(null); }}
+              className={`flex-1 pb-2.5 text-[11px] font-black uppercase tracking-wider transition-colors border-b-2 cursor-pointer ${
+                adminFormTab === 'product'
+                  ? 'border-teal-500 text-teal-600 dark:text-teal-400'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              Add Product
+            </button>
+            <button
+              onClick={() => { setAdminFormTab('portfolio'); setFeedback(null); }}
+              className={`flex-1 pb-2.5 text-[11px] font-black uppercase tracking-wider transition-colors border-b-2 cursor-pointer ${
+                adminFormTab === 'portfolio'
+                  ? 'border-teal-500 text-teal-600 dark:text-teal-400'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              Add Portfolio
+            </button>
+          </div>
+
           {/* Add Product Form */}
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              Add Store Product
-            </h3>
-            <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-450">Product Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Lightroom LUT Pack"
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-450">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the product details..."
-                  rows={3}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+          {adminFormTab === 'product' ? (
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Add Store Product
+              </h3>
+              <form onSubmit={handleAddProduct} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-450">Price ($ USD)</label>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Product Name</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="1.00"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Lightroom LUT Pack"
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-450">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all cursor-pointer"
-                  >
-                    <option value="templates">Templates</option>
-                    <option value="graphics">Graphics</option>
-                    <option value="assets">3D Assets</option>
-                    <option value="presets">Presets</option>
-                  </select>
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the product details..."
+                    rows={3}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all resize-none"
+                  />
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-450">Image URL (Optional)</label>
-                <input
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.png"
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Price ($ USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="1.00"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                      required
+                    />
+                  </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 text-white font-bold py-3 hover:bg-teal-700 shadow-md disabled:opacity-50 transition-all cursor-pointer"
-              >
-                {loading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                <span>Add Product to Store</span>
-              </button>
-            </form>
-          </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Category</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all cursor-pointer"
+                    >
+                      <option value="templates">Templates</option>
+                      <option value="graphics">Graphics</option>
+                      <option value="assets">3D Assets</option>
+                      <option value="presets">Presets</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Image URL (Optional)</label>
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.png"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-650 text-white font-bold py-3 hover:bg-teal-700 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                  <span>Add Product to Store</span>
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Add Portfolio Project
+              </h3>
+              <form onSubmit={handleUploadPortfolio} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Project Title</label>
+                  <input
+                    type="text"
+                    value={portTitle}
+                    onChange={(e) => setPortTitle(e.target.value)}
+                    placeholder="e.g. Midas Esports Mascot"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Subtitle</label>
+                    <input
+                      type="text"
+                      value={portSubtitle}
+                      onChange={(e) => setPortSubtitle(e.target.value)}
+                      placeholder="e.g. Vector Logo Art"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Category</label>
+                    <select
+                      value={portCategory}
+                      onChange={(e) => setPortCategory(e.target.value)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all cursor-pointer"
+                    >
+                      <option value="branding">Branding</option>
+                      <option value="esports">Esports</option>
+                      <option value="sports">Sports</option>
+                      <option value="3d">3D Model</option>
+                      <option value="illustration">Illustration</option>
+                      <option value="design">Design</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Description</label>
+                  <textarea
+                    value={portDescription}
+                    onChange={(e) => setPortDescription(e.target.value)}
+                    placeholder="Brief scope summary..."
+                    rows={3}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all resize-none"
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Tags (Comma-separated)</label>
+                  <input
+                    type="text"
+                    value={portTags}
+                    onChange={(e) => setPortTags(e.target.value)}
+                    placeholder="Esports, Mascot, Vector"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Image URL</label>
+                  <input
+                    type="text"
+                    value={portImageUrl}
+                    onChange={(e) => setPortImageUrl(e.target.value)}
+                    placeholder="https://example.com/project-cover.png"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-650 text-white font-bold py-3 hover:bg-teal-700 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                  <span>Upload Portfolio Item</span>
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* Feedback Messages */}
           {feedback && (

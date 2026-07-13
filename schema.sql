@@ -140,4 +140,25 @@ CREATE POLICY "Allow team and admin to join as collaborator" ON public.request_c
 CREATE POLICY "Allow team and admin to leave collaboration" ON public.request_collaborators FOR DELETE USING (true);
 
 
+-- 9. Portfolio Table
+CREATE TABLE IF NOT EXISTS public.portfolio (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    category TEXT NOT NULL, -- 'branding', 'esports', 'sports', '3d', 'illustration', 'design'
+    subtitle TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tags TEXT[] DEFAULT '{}'::TEXT[],
+    badges TEXT[] DEFAULT '{}'::TEXT[],
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.portfolio ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public select portfolio" ON public.portfolio FOR SELECT USING (true);
+CREATE POLICY "Allow admin insert portfolio" ON public.portfolio FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow admin delete portfolio" ON public.portfolio FOR DELETE USING (true);
+
+
+
 
