@@ -43,6 +43,8 @@ export default function Navbar() {
     }
   };
 
+  const isTeamOrAdmin = hasAdminPrivileges || user?.publicMetadata?.role === 'team';
+
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Services', path: '/services' },
@@ -51,6 +53,10 @@ export default function Navbar() {
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
+
+  if (isTeamOrAdmin) {
+    navLinks.push({ name: 'Team Portal', path: '/team' });
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">

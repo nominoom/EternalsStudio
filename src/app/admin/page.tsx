@@ -22,7 +22,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  Info
+  Info,
+  Briefcase
 } from 'lucide-react';
 
 interface Order {
@@ -77,10 +78,11 @@ const mockEvents: SystemEvent[] = [
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'logs'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'requests' | 'logs'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Search & Filter State for Logs
@@ -120,11 +122,13 @@ export default function AdminDashboard() {
         setOrders(data.orders || mockOrders);
         setMessages(data.messages || mockMessages);
         setEvents(data.events || mockEvents);
+        setRequests(data.requests || []);
       } catch (err) {
         console.log('Using local fallback admin details:', err);
         setOrders(mockOrders);
         setMessages(mockMessages);
         setEvents(mockEvents);
+        setRequests([]);
       } finally {
         setLoading(false);
       }
@@ -286,7 +290,7 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-6 flex items-center gap-4 shadow-sm">
               <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <DollarSign size={24} />
@@ -315,6 +319,15 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-6 flex items-center gap-4 shadow-sm">
+              <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Briefcase size={24} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Project Requests</span>
+                <span className="text-2xl font-black mt-1">{requests.length}</span>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-6 flex items-center gap-4 shadow-sm">
               <div className="h-12 w-12 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
                 <Activity size={24} />
               </div>
@@ -325,18 +338,24 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex border-b border-slate-200/60 dark:border-slate-800/60 gap-8">
-            {['orders', 'messages', 'logs'].map((tab) => (
+          <div className="flex border-b border-slate-200/60 dark:border-slate-800/60 gap-8 overflow-x-auto">
+            {['orders', 'messages', 'requests', 'logs'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
-                className={`pb-3 font-bold text-sm border-b-2 transition-colors cursor-pointer ${
+                className={`pb-3 font-bold text-sm border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-teal-500 text-teal-500'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900'
                 }`}
               >
-                {tab === 'orders' ? 'Order Entries' : tab === 'messages' ? 'Support Messages' : 'Logs & Deployments'}
+                {tab === 'orders' 
+                  ? 'Order Entries' 
+                  : tab === 'messages' 
+                    ? 'Support Messages' 
+                    : tab === 'requests'
+                      ? 'Project Requests'
+                      : 'Logs & Deployments'}
               </button>
             ))}
           </div>
@@ -476,6 +495,102 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'requests' && (
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="font-extrabold text-base">Client Project Requests</h3>
+                    <p className="text-xs text-slate-500">Incoming client custom work proposals. Approve to delegate them to the team portal.</p>
+                  </div>
+                </div>
+
+                {requests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                    <span className="text-slate-400 dark:text-slate-655 font-bold text-sm">No project requests found</span>
+                    <span className="text-xs text-slate-400">Requests submitted by clients in the contact form will appear here.</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {requests.map((req) => (
+                      <div
+                        key={req.id}
+                        className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/50 dark:bg-slate-950/20 flex flex-col md:flex-row md:items-center justify-between gap-6"
+                      >
+                        <div className="flex flex-col gap-2 max-w-2xl">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <span className="font-black text-sm text-slate-800 dark:text-slate-200">{req.subject}</span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                              req.status === 'pending'
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                : req.status === 'approved'
+                                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                  : req.status === 'claimed'
+                                    ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                            }`}>
+                              {req.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-pre-wrap">{req.description}</p>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2 pt-2 border-t border-slate-200/30 dark:border-slate-800/30">
+                            <span className="text-xs font-semibold text-slate-500">
+                              Client: <strong className="text-slate-700 dark:text-slate-350">{req.client_name}</strong> ({req.client_email})
+                            </span>
+                            {req.client_phone && (
+                              <span className="text-xs font-semibold text-slate-500">
+                                Phone: <strong className="text-slate-700 dark:text-slate-350">{req.client_phone}</strong>
+                              </span>
+                            )}
+                            {req.file_url && (
+                              <span className="text-xs font-semibold text-slate-500 col-span-2">
+                                Reference Link: <a href={req.file_url} target="_blank" rel="noopener noreferrer" className="text-teal-500 hover:underline inline-flex items-center gap-1">
+                                  {req.file_url.length > 40 ? req.file_url.substring(0, 40) + '...' : req.file_url}
+                                </a>
+                              </span>
+                            )}
+                            {req.assigned_to_name && (
+                              <span className="text-xs font-semibold text-slate-500 col-span-2">
+                                Assignee: <strong className="text-teal-600 dark:text-teal-400">{req.assigned_to_name}</strong>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {req.status === 'pending' && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Approve this request and post it to the Team Portal?')) return;
+                              try {
+                                const response = await fetch('/api/team/tasks/approve', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ requestId: req.id })
+                                });
+                                if (response.ok) {
+                                  alert('Request successfully approved and sent to team!');
+                                  // Update local state
+                                  setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
+                                } else {
+                                  const data = await response.json();
+                                  alert(data.error || 'Failed to approve request');
+                                }
+                              } catch (e: any) {
+                                alert('Error: ' + e.message);
+                              }
+                            }}
+                            className="bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm self-start md:self-auto"
+                          >
+                            Send to Team
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { Mail, Phone, Share2, Shield, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, Share2, Shield, Send, CheckCircle2, FileText, Briefcase } from 'lucide-react';
 
 export default function Contact() {
+  const [formType, setFormType] = useState<'inquiry' | 'request'>('inquiry');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -13,6 +14,8 @@ export default function Contact() {
     company: '',
     subject: '',
     message: '',
+    phone: '',
+    fileUrl: '',
   });
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
@@ -21,10 +24,22 @@ export default function Contact() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch('/api/contact', {
+      const isRequest = formType === 'request';
+      const endpoint = isRequest ? '/api/requests' : '/api/contact';
+      
+      const payload = isRequest ? {
+        clientName: `${formData.firstName} ${formData.lastName}`.trim(),
+        clientEmail: formData.email,
+        clientPhone: formData.phone,
+        subject: formData.subject,
+        description: formData.message,
+        fileUrl: formData.fileUrl,
+      } : formData;
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
@@ -36,6 +51,8 @@ export default function Contact() {
           company: '',
           subject: '',
           message: '',
+          phone: '',
+          fileUrl: '',
         });
       } else {
         throw new Error(data.error || 'Failed to submit message');
@@ -66,7 +83,7 @@ export default function Contact() {
             Contact <span className="bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">Us</span>
           </h1>
           <p className="text-lg font-medium text-slate-500 dark:text-slate-400 max-w-xl">
-            Get in touch with our design and development team to coordinate your brand launch.
+            Get in touch with our design and development team or submit a project specification request directly to the studio.
           </p>
         </section>
 
@@ -75,18 +92,51 @@ export default function Contact() {
           
           {/* Left Form Card */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl p-8 shadow-sm">
+            
+            {/* Form Type Tab Selector */}
+            {!showSuccess && (
+              <div className="grid grid-cols-2 gap-2 mb-8 bg-slate-100 dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200/30 dark:border-slate-800/30">
+                <button
+                  type="button"
+                  onClick={() => setFormType('inquiry')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    formType === 'inquiry'
+                      ? 'bg-white dark:bg-slate-900 shadow-sm text-teal-600 dark:text-teal-400'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+                  }`}
+                >
+                  <FileText size={14} />
+                  <span>General Inquiry</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormType('request')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    formType === 'request'
+                      ? 'bg-white dark:bg-slate-900 shadow-sm text-teal-600 dark:text-teal-400'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+                  }`}
+                >
+                  <Briefcase size={14} />
+                  <span>Project Request</span>
+                </button>
+              </div>
+            )}
+
             {showSuccess ? (
               <div className="flex flex-col items-center text-center gap-4 py-16">
                 <CheckCircle2 size={56} className="text-teal-500" />
-                <h3 className="text-xl font-extrabold">Message Sent Successfully!</h3>
+                <h3 className="text-xl font-extrabold">Submission Sent!</h3>
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm">
-                  Thank you for contacting Eternals Studio. A member of our support team will reply inside 24 to 48 hours.
+                  {formType === 'request'
+                    ? 'Your project request has been logged successfully. Our administrators will review the details and delegate it to the team portal.'
+                    : 'Thank you for contacting Eternals Studio. A member of our support team will reply inside 24 to 48 hours.'}
                 </p>
                 <button
                   onClick={() => setShowSuccess(false)}
-                  className="mt-4 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs transition-colors"
+                  className="mt-4 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs transition-colors cursor-pointer"
                 >
-                  Send Another Message
+                  Send Another Submission
                 </button>
               </div>
             ) : (
@@ -131,38 +181,72 @@ export default function Contact() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="company" className="text-xs font-bold text-slate-600 dark:text-slate-400">Company (Optional)</label>
-                  <input
-                    type="text"
-                    id="company"
-                    value={formData.company}
-                    onChange={handleChange}
-                    placeholder="Your Company"
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
-                  />
-                </div>
+                {formType === 'request' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="phone" className="text-xs font-bold text-slate-600 dark:text-slate-400">Phone Number (For Callback)</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="(555) 000-0000"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                      required
+                    />
+                  </div>
+                )}
+
+                {formType === 'inquiry' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="company" className="text-xs font-bold text-slate-600 dark:text-slate-400">Company (Optional)</label>
+                    <input
+                      type="text"
+                      id="company"
+                      value={formData.company}
+                      onChange={handleChange}
+                      placeholder="Your Company"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    />
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="subject" className="text-xs font-bold text-slate-600 dark:text-slate-400">Subject</label>
+                  <label htmlFor="subject" className="text-xs font-bold text-slate-600 dark:text-slate-400">Project Subject / Topic</label>
                   <input
                     type="text"
                     id="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="Subject Topic"
+                    placeholder={formType === 'request' ? "e.g. Esports Team Branding Package" : "e.g. General Inquiry"}
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    required
                   />
                 </div>
 
+                {formType === 'request' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="fileUrl" className="text-xs font-bold text-slate-600 dark:text-slate-400">Reference File Link (Drive, Dropbox, Figma)</label>
+                    <input
+                      type="url"
+                      id="fileUrl"
+                      value={formData.fileUrl}
+                      onChange={handleChange}
+                      placeholder="https://drive.google.com/..."
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    />
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="message" className="text-xs font-bold text-slate-600 dark:text-slate-400">Message</label>
+                  <label htmlFor="message" className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                    {formType === 'request' ? 'Project Requirements & Scope Details' : 'Message'}
+                  </label>
                   <textarea
                     id="message"
                     rows={5}
                     value={formData.message}
                     onChange={handleChange}
-                    placeholder="Describe your design or development goals..."
+                    placeholder={formType === 'request' ? "Describe the scope of work, timeline constraints, aesthetic styles, or custom formats required..." : "Describe your design or development goals..."}
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all resize-none"
                     required
                   />
@@ -174,7 +258,7 @@ export default function Contact() {
                   className="flex items-center justify-center gap-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm py-3 mt-2 shadow-md shadow-teal-500/10 disabled:opacity-50 transition-all cursor-pointer"
                 >
                   <Send size={16} />
-                  <span>{submitting ? 'Sending...' : 'Send Message'}</span>
+                  <span>{submitting ? 'Submitting...' : formType === 'request' ? 'Submit Project Request' : 'Send Message'}</span>
                 </button>
               </form>
             )}

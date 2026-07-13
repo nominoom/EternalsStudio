@@ -100,3 +100,42 @@ CREATE TABLE IF NOT EXISTS public.system_events (
 ALTER TABLE public.system_events ENABLE ROW LEVEL SECURITY;
 
 
+-- 7. Project Requests Table
+CREATE TABLE IF NOT EXISTS public.project_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_name TEXT NOT NULL,
+    client_email TEXT NOT NULL,
+    client_phone TEXT,
+    subject TEXT NOT NULL,
+    description TEXT NOT NULL,
+    file_url TEXT,
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'claimed', 'completed'
+    assigned_to_id TEXT,
+    assigned_to_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.project_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public to insert requests" ON public.project_requests FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow team and admin to read requests" ON public.project_requests FOR SELECT USING (true);
+CREATE POLICY "Allow team and admin to update requests" ON public.project_requests FOR UPDATE USING (true);
+
+-- 8. Request Collaborators Table
+CREATE TABLE IF NOT EXISTS public.request_collaborators (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    request_id UUID REFERENCES public.project_requests(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    joined_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    UNIQUE(request_id, user_id)
+);
+
+-- Enable RLS
+ALTER TABLE public.request_collaborators ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to collaborators" ON public.request_collaborators FOR SELECT USING (true);
+CREATE POLICY "Allow team and admin to join as collaborator" ON public.request_collaborators FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow team and admin to leave collaboration" ON public.request_collaborators FOR DELETE USING (true);
+
+
+

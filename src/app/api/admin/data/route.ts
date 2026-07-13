@@ -79,10 +79,26 @@ export async function GET(req: Request): Promise<Response> {
       systemEvents = [];
     }
 
+    // 7. Fetch project requests from Supabase database
+    let projectRequests: any[] = [];
+    try {
+      const { data: dbRequests, error: dbError } = await supabaseAdmin
+        .from('project_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (dbError) throw dbError;
+      projectRequests = dbRequests || [];
+    } catch (dbErr: any) {
+      console.warn('Supabase project requests query failed:', dbErr.message);
+      projectRequests = [];
+    }
+
     return NextResponse.json({
       orders: stripeOrders,
       messages: contactMessages,
       events: systemEvents,
+      requests: projectRequests,
     }) as unknown as Response;
   } catch (error: any) {
     console.error('Admin API error:', error);
