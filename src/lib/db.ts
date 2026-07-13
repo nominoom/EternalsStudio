@@ -17,10 +17,7 @@ if (!global.mongooseCache) {
 const cached = global.mongooseCache;
 
 export async function dbConnect(): Promise<typeof mongoose> {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-  }
+  const uri = process.env.MONGODB_URI || "mongodb+srv://eternalsanctuarygg_db_user:ubxXFdPE8bWJLzbx@cluster0.7z0wnq7.mongodb.net/eternals-studio?retryWrites=true&w=majority&appName=Cluster0";
 
   if (cached.conn) {
     return cached.conn;
