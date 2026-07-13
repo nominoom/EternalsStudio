@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { ProjectRequest, dbConnect } from '../../../../../lib/db';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { logEvent } from '../../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -28,27 +28,27 @@ export async function POST(req: Request): Promise<Response> {
       ? `${user.firstName} ${user.lastName || ''}`.trim() 
       : user.emailAddresses?.[0]?.emailAddress || 'Team Member';
 
-    await dbConnect();
-
     let task;
     try {
-      // 4. Update request status to 'claimed' and assign in MongoDB
-      const data = await ProjectRequest.findOneAndUpdate(
-        { _id: requestId, status: 'approved' },
-        {
+      // 4. Update request status to 'claimed' and assign
+      const { data, error: dbError } = await supabaseAdmin
+        .from('project_requests')
+        .update({
           status: 'claimed',
           assigned_to_id: user.id,
           assigned_to_name: userName,
-        },
-        { new: true }
-      );
+        })
+        .eq('id', requestId)
+        .eq('status', 'approved') // Safety check: can only claim approved, open tasks
+        .select()
+        .single();
 
-      if (!data) {
-        throw new Error('Task not found or not in approved status');
+      if (dbError) {
+        throw dbError;
       }
-      task = { ...data.toObject(), id: data._id.toString() };
+      task = data;
     } catch (dbErr: any) {
-      console.warn('[MongoDB Bypass] Failed to claim request on database:', dbErr.message);
+      console.warn('[Supabase Bypass] Failed to claim request on database:', dbErr.message);
       // Fallback: Return mock claimed task details
       task = {
         id: requestId,
@@ -62,7 +62,6 @@ export async function POST(req: Request): Promise<Response> {
         created_at: new Date().toISOString()
       };
     }
-
 
     // 5. Log assignment event
     await logEvent(

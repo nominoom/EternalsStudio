@@ -16,7 +16,7 @@ import {
   Play,
   FileText
 } from 'lucide-react';
-// Supabase import deleted, using API route instead
+import { supabase } from '../../lib/supabase';
 
 interface ProjectRequest {
   id: string;
@@ -42,9 +42,14 @@ export default function ClientPortal() {
   async function fetchRequests(email: string) {
     let dbRequests: ProjectRequest[] = [];
     try {
-      const response = await fetch('/api/client/requests');
-      if (response.ok) {
-        dbRequests = await response.json();
+      const { data, error } = await supabase
+        .from('project_requests')
+        .select('*')
+        .eq('client_email', email)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        dbRequests = data as ProjectRequest[];
       }
     } catch (e) {
       console.warn('Failed to query live database project requests:', e);

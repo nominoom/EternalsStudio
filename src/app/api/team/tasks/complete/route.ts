@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { ProjectRequest, dbConnect } from '../../../../../lib/db';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { logEvent } from '../../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -28,13 +28,16 @@ export async function POST(req: Request): Promise<Response> {
     let isMockId = String(requestId).startsWith('mock-');
     let task;
 
-    await dbConnect();
-
     if (!isMockId) {
       // 4. Fetch the task to verify ownership (only for actual database entries)
       try {
-        const dbTask = await ProjectRequest.findById(requestId);
-        if (!dbTask) {
+        const { data: dbTask, error: fetchError } = await supabaseAdmin
+          .from('project_requests')
+          .select('*')
+          .eq('id', requestId)
+          .single();
+
+        if (fetchError || !dbTask) {
           throw new Error('Task not found in DB');
         }
         
@@ -45,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
           return NextResponse.json({ error: 'Access denied: Only the task owner or an administrator can mark it complete' }, { status: 403 }) as unknown as Response;
         }
       } catch (e: any) {
-        console.warn('[MongoDB Bypass] Fetching task failed, assuming mock task ownership:', e.message);
+        console.warn('[Supabase Bypass] Fetching task failed, assuming mock task ownership:', e.message);
         isMockId = true;
       }
     }
@@ -56,19 +59,20 @@ export async function POST(req: Request): Promise<Response> {
         throw new Error('Mock ID triggered fallback');
       }
 
-      // 6. Update task status to 'completed' in MongoDB
-      const data = await ProjectRequest.findByIdAndUpdate(
-        requestId,
-        { status: 'completed' },
-        { new: true }
-      );
+      // 6. Update task status to 'completed'
+      const { data, error: dbError } = await supabaseAdmin
+        .from('project_requests')
+        .update({ status: 'completed' })
+        .eq('id', requestId)
+        .select()
+        .single();
 
-      if (!data) {
-        throw new Error('Failed to update task to completed');
+      if (dbError) {
+        throw dbError;
       }
-      updatedTask = { ...data.toObject(), id: data._id.toString() };
+      updatedTask = data;
     } catch (dbError: any) {
-      console.warn('[MongoDB Bypass] Failed to complete request on database:', dbError.message);
+      console.warn('[Supabase Bypass] Failed to complete request on database:', dbError.message);
       // Fallback: Return mock completed task details
       updatedTask = {
         id: requestId,
@@ -82,7 +86,6 @@ export async function POST(req: Request): Promise<Response> {
         created_at: new Date().toISOString()
       };
     }
-
 
     // 7. Log completion event
     const userName = user.firstName 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
-import { ProjectRequest, dbConnect } from '../../../../../lib/db';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { logEvent } from '../../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
@@ -31,16 +31,19 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing or invalid parameters: requestId, amount' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
-
     // 4. Fetch the target request details
     let request;
     try {
-      const data = await ProjectRequest.findById(requestId);
-      if (!data) throw new Error('Request not found');
+      const { data, error: fetchError } = await supabaseAdmin
+        .from('project_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError || !data) throw fetchError || new Error('Request not found');
       request = data;
     } catch (e: any) {
-      console.warn('[MongoDB Bypass] Failed to fetch request detail, preparing mock detail:', e.message);
+      console.warn('[Supabase Bypass] Failed to fetch request detail, preparing mock detail:', e.message);
       request = {
         id: requestId,
         client_name: 'Mock Client',
@@ -86,20 +89,21 @@ export async function POST(req: Request): Promise<Response> {
     // 6. Update Database
     let updatedRequest;
     try {
-      const data = await ProjectRequest.findByIdAndUpdate(
-        requestId,
-        {
+      const { data, error: dbError } = await supabaseAdmin
+        .from('project_requests')
+        .update({
           invoice_url: sessionUrl,
           invoice_amount: amount,
           status: 'awaiting_payment',
-        },
-        { new: true }
-      );
+        })
+        .eq('id', requestId)
+        .select()
+        .single();
 
-      if (!data) throw new Error('Failed to update request');
-      updatedRequest = { ...data.toObject(), id: data._id.toString() };
+      if (dbError) throw dbError;
+      updatedRequest = data;
     } catch (dbErr: any) {
-      console.warn('[MongoDB Bypass] Failed to update project request with invoice info:', dbErr.message);
+      console.warn('[Supabase Bypass] Failed to update project request with invoice info:', dbErr.message);
       updatedRequest = {
         ...request,
         invoice_url: sessionUrl,
@@ -107,7 +111,6 @@ export async function POST(req: Request): Promise<Response> {
         status: 'awaiting_payment',
       };
     }
-
 
     // 7. Send Invoice Email notification via Resend
     try {

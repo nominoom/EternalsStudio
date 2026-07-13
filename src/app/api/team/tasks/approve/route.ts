@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { ProjectRequest, dbConnect } from '../../../../../lib/db';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 import { logEvent } from '../../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -23,23 +23,22 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
-
     let task;
     try {
-      // 4. Update request status to 'approved' in MongoDB
-      const data = await ProjectRequest.findByIdAndUpdate(
-        requestId,
-        { status: 'approved' },
-        { new: true }
-      );
+      // 4. Update request status to 'approved'
+      const { data, error: dbError } = await supabaseAdmin
+        .from('project_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestId)
+        .select()
+        .single();
 
-      if (!data) {
-        throw new Error('Task not found');
+      if (dbError) {
+        throw dbError;
       }
-      task = { ...data.toObject(), id: data._id.toString() };
+      task = data;
     } catch (dbErr: any) {
-      console.warn('[MongoDB Bypass] Failed to approve request on database:', dbErr.message);
+      console.warn('[Supabase Bypass] Failed to approve request on database:', dbErr.message);
       // Fallback: Create mock approved task
       task = {
         id: requestId,
@@ -51,7 +50,6 @@ export async function POST(req: Request): Promise<Response> {
         created_at: new Date().toISOString()
       };
     }
-
 
     // 5. Log delegation event
     const adminEmail = user.emailAddresses?.[0]?.emailAddress || 'admin@eternals.gg';

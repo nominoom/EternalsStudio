@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { Product, dbConnect } from '../../../../lib/db';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -24,16 +24,24 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing required fields: name, price, or category' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
+    // 4. Insert product into Supabase Database
+    const { data: product, error: dbError } = await supabaseAdmin
+      .from('products')
+      .insert([
+        {
+          name,
+          description: description || '',
+          price,
+          category,
+          image_url: image_url || '',
+        }
+      ])
+      .select()
+      .single();
 
-    // 4. Insert product into MongoDB Database
-    const product = await Product.create({
-      name,
-      description: description || '',
-      price,
-      category,
-      image_url: image_url || '',
-    });
+    if (dbError) {
+      throw dbError;
+    }
 
     // 5. Log product addition event
     const adminEmail = user.emailAddresses?.[0]?.emailAddress || 'admin@eternals.gg';
@@ -42,10 +50,10 @@ export async function POST(req: Request): Promise<Response> {
       'database',
       'success',
       `Administrator created product "${name}" ($${price}) under category "${category}".`,
-      { actor: adminEmail, product_id: product._id.toString(), price }
+      { actor: adminEmail, product_id: product.id, price }
     );
 
-    return NextResponse.json({ success: true, product: { ...product.toObject(), id: product._id.toString() } }) as unknown as Response;
+    return NextResponse.json({ success: true, product }) as unknown as Response;
   } catch (error: any) {
     console.error('Product Creation API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
@@ -74,13 +82,14 @@ export async function DELETE(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing product ID parameter' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
+    // 4. Delete product from Supabase Database
+    const { error: dbError } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', productId);
 
-    // 4. Delete product from MongoDB Database
-    const deletedProduct = await Product.findByIdAndDelete(productId);
-
-    if (!deletedProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 }) as unknown as Response;
+    if (dbError) {
+      throw dbError;
     }
 
     // 5. Log product deletion event
@@ -99,4 +108,3 @@ export async function DELETE(req: Request): Promise<Response> {
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
-

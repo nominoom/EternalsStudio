@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { quickbooksRequest } from '../../../../lib/quickbooks';
-import { Order, dbConnect } from '../../../../lib/db';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 const WEBHOOK_VERIFIER = process.env.QUICKBOOKS_WEBHOOK_VERIFIER || '';
@@ -49,10 +49,6 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  if (notifications.length > 0) {
-    await dbConnect();
-  }
-
   for (const notification of notifications) {
     const entities = notification.dataChangeEvent?.entities || [];
 
@@ -74,20 +70,20 @@ export async function POST(req: Request): Promise<Response> {
 
           // If balance is 0 and total is positive, invoice is fully paid
           if (balance === 0 && totalAmt > 0) {
-            const updated = await Order.findOneAndUpdate(
-              { stripe_session_id: entityId },
-              { status: 'completed' },
-              { new: true }
-            );
+            const { error: dbError } = await supabaseAdmin
+              .from('orders')
+              .update({ status: 'completed' })
+              .eq('stripe_session_id', entityId);
 
+            if (dbError) throw dbError;
             console.log(`Order status updated to completed for invoice ID ${entityId}`);
             
             await logEvent(
               'evt_qb_invoice_paid',
               'quickbooks',
               'success',
-              `QuickBooks Invoice ${entityId} balance is $0.00. MongoDB order completed.`,
-              { invoice_id: entityId, balance, totalAmt, found: !!updated }
+              `QuickBooks Invoice ${entityId} balance is $0.00. Supabase order completed.`,
+              { invoice_id: entityId, balance, totalAmt }
             );
           }
         } 
@@ -100,20 +96,20 @@ export async function POST(req: Request): Promise<Response> {
           const linkedTxnId = payment.Line?.[0]?.LinkedTxn?.[0]?.TxnId || payment.Line?.[0]?.TxnId;
 
           if (linkedTxnId) {
-            const updated = await Order.findOneAndUpdate(
-              { stripe_session_id: linkedTxnId },
-              { status: 'completed' },
-              { new: true }
-            );
+            const { error: dbError } = await supabaseAdmin
+              .from('orders')
+              .update({ status: 'completed' })
+              .eq('stripe_session_id', linkedTxnId);
 
+            if (dbError) throw dbError;
             console.log(`Order status updated to completed for linked invoice ID ${linkedTxnId} via Payment webhook`);
             
             await logEvent(
               'evt_qb_payment_success',
               'quickbooks',
               'success',
-              `QuickBooks Payment ${entityId} allocated. MongoDB order completed for invoice ID ${linkedTxnId}.`,
-              { payment_id: entityId, invoice_id: linkedTxnId, found: !!updated }
+              `QuickBooks Payment ${entityId} allocated. Supabase order completed for invoice ID ${linkedTxnId}.`,
+              { payment_id: entityId, invoice_id: linkedTxnId }
             );
           }
         }
@@ -132,3 +128,5 @@ export async function POST(req: Request): Promise<Response> {
 
   return NextResponse.json({ received: true }) as unknown as Response;
 }
+
+

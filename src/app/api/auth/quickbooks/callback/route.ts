@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { QuickBooksToken, dbConnect } from '../../../../../lib/db';
+import { supabaseAdmin } from '../../../../../lib/supabase';
 
 const TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 const CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID || '';
@@ -16,7 +16,6 @@ export async function GET(req: Request) {
   }
 
   try {
-    await dbConnect();
     const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
 
     const response = await fetch(TOKEN_URL, {
@@ -42,19 +41,20 @@ export async function GET(req: Request) {
     const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
     const refreshExpiresAt = new Date(Date.now() + data.x_refresh_token_expires_in * 1000).toISOString();
 
-    // Upsert the tokens into MongoDB
-    await QuickBooksToken.findOneAndUpdate(
-      { customId: 'quickbooks_tokens' },
-      {
+    // Upsert the tokens into Supabase
+    const { error: upsertError } = await supabaseAdmin
+      .from('quickbooks_tokens')
+      .upsert({
+        id: 1,
         access_token: data.access_token,
         refresh_token: data.refresh_token,
-        expires_at: new Date(expiresAt),
-        refresh_expires_at: new Date(refreshExpiresAt),
+        expires_at: expiresAt,
+        refresh_expires_at: refreshExpiresAt,
         realm_id: realmId,
-        updated_at: new Date(),
-      },
-      { upsert: true, new: true }
-    );
+        updated_at: new Date().toISOString(),
+      });
+
+    if (upsertError) throw upsertError;
 
     // Return a beautiful success page to the administrator
     return new Response(

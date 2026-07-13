@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-// Supabase imported deleted, querying via API route
+import { supabase } from '../../lib/supabase';
 import { ShoppingCart, Tag, Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAdmin } from '../../context/AdminContext';
@@ -55,9 +55,8 @@ function StoreContent() {
     async function getProducts() {
       const localCustom = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('localCustomProducts') || '[]') : [];
       try {
-        const response = await fetch('/api/products');
-        if (!response.ok) throw new Error('API error');
-        const data = await response.json();
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
         if (data && data.length > 0) {
           setProducts([...data, ...localCustom]);
         } else {

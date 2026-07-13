@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { Portfolio, dbConnect } from '../../../../lib/db';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -24,18 +24,26 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing required fields: title, category, subtitle, or description' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
+    // 4. Insert into Supabase Table
+    const { data: project, error: dbError } = await supabaseAdmin
+      .from('portfolio')
+      .insert([
+        {
+          title,
+          subtitle,
+          category,
+          description,
+          tags: tags || [],
+          image_url: image_url || '',
+          badges: ['Client']
+        }
+      ])
+      .select()
+      .single();
 
-    // 4. Insert into MongoDB Table
-    const project = await Portfolio.create({
-      title,
-      subtitle,
-      category,
-      description,
-      tags: tags || [],
-      image_url: image_url || '',
-      badges: ['Client']
-    });
+    if (dbError) {
+      throw dbError;
+    }
 
     // 5. Log audit event
     const adminEmail = user.emailAddresses?.[0]?.emailAddress || 'admin@eternals.gg';
@@ -44,10 +52,10 @@ export async function POST(req: Request): Promise<Response> {
       'database',
       'success',
       `Administrator uploaded project "${title}" to portfolio under category "${category}".`,
-      { actor: adminEmail, project_id: project._id.toString(), category }
+      { actor: adminEmail, project_id: project.id, category }
     );
 
-    return NextResponse.json({ success: true, project: { ...project.toObject(), id: project._id.toString() } }) as unknown as Response;
+    return NextResponse.json({ success: true, project }) as unknown as Response;
   } catch (error: any) {
     console.error('Portfolio Creation API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
@@ -76,13 +84,14 @@ export async function DELETE(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Missing ID parameter' }, { status: 400 }) as unknown as Response;
     }
 
-    await dbConnect();
+    // 4. Delete from Supabase Table
+    const { error: dbError } = await supabaseAdmin
+      .from('portfolio')
+      .delete()
+      .eq('id', projectId);
 
-    // 4. Delete from MongoDB Table
-    const deletedProject = await Portfolio.findByIdAndDelete(projectId);
-
-    if (!deletedProject) {
-      return NextResponse.json({ error: 'Portfolio item not found' }, { status: 404 }) as unknown as Response;
+    if (dbError) {
+      throw dbError;
     }
 
     // 5. Log audit event
@@ -101,4 +110,3 @@ export async function DELETE(req: Request): Promise<Response> {
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
-

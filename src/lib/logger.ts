@@ -1,4 +1,4 @@
-import { SystemEvent, dbConnect } from './db';
+import { supabaseAdmin } from './supabase';
 
 export type EventCategory = 'deployment' | 'stripe' | 'quickbooks' | 'database' | 'auth' | 'contact';
 export type EventStatus = 'info' | 'success' | 'warning' | 'error';
@@ -14,8 +14,8 @@ export interface SystemEvent {
 }
 
 /**
- * Logs a system event. Attempts to write to the MongoDB `systemevents` collection.
- * If that fails (e.g. database offline), it falls back to console.log/console.error.
+ * Logs a system event. Attempts to write to the Supabase `system_events` table.
+ * If that fails (e.g. database offline, table not created), it falls back to console.log/console.error.
  */
 export async function logEvent(
   eventKey: string,
@@ -24,7 +24,7 @@ export async function logEvent(
   message: string,
   metadata: Record<string, unknown> = {}
 ): Promise<SystemEvent> {
-  const eventData = {
+  const eventData: SystemEvent = {
     event_key: eventKey,
     category,
     status,
@@ -33,21 +33,22 @@ export async function logEvent(
   };
 
   try {
-    await dbConnect();
-    const doc = await SystemEvent.create(eventData);
-    
-    return {
-      id: doc._id.toString(),
-      event_key: doc.event_key,
-      category: doc.category as EventCategory,
-      status: doc.status as EventStatus,
-      message: doc.message,
-      metadata: doc.metadata,
-      created_at: doc.created_at.toISOString(),
-    };
+    const { data, error } = await supabaseAdmin
+      .from('system_events')
+      .insert(eventData)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn(`[Supabase Log Failed] Falling back to console: ${error.message}`);
+      fallbackLog(category, status, eventKey, message, metadata);
+      return { ...eventData, created_at: new Date().toISOString() };
+    }
+
+    return data;
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    console.warn(`[MongoDB Log Error] Falling back to console: ${errMsg}`);
+    console.warn(`[Supabase Log Error] Falling back to console: ${errMsg}`);
     fallbackLog(category, status, eventKey, message, metadata);
     return { ...eventData, created_at: new Date().toISOString() };
   }

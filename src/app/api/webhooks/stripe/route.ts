@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { Order, ProjectRequest, dbConnect } from '../../../../lib/db';
+import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
@@ -47,17 +47,14 @@ export async function POST(req: Request): Promise<Response> {
     const checkoutType = session.metadata?.type || '';
     const requestId = session.metadata?.request_id || '';
 
-    await dbConnect();
-
     if (checkoutType === 'project_invoice' && requestId) {
       try {
-        const updatedRequest = await ProjectRequest.findByIdAndUpdate(
-          requestId,
-          { status: 'approved' },
-          { new: true }
-        );
+        const { error: updateError } = await supabaseAdmin
+          .from('project_requests')
+          .update({ status: 'approved' })
+          .eq('id', requestId);
 
-        if (!updatedRequest) throw new Error('Project request not found');
+        if (updateError) throw updateError;
 
         console.log(`Successfully completed payment for project request ${requestId}`);
         await logEvent(
@@ -80,24 +77,36 @@ export async function POST(req: Request): Promise<Response> {
     const stripeSessionId = session.id;
 
     try {
-      // 1. Retrieve actual line items from Stripe API
+      // 1. Write the main invoice order
+      const { data: orderData, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          user_id: userId,
+          user_email: userEmail,
+          total_amount: totalAmount,
+          status: 'completed',
+          stripe_session_id: stripeSessionId,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. Retrieve actual line items from Stripe API
       const lineItems = await stripe.checkout.sessions.listLineItems(stripeSessionId);
 
-      // 2. Map the items to our order items schema
+      // 3. Write the individual order items
       const orderItems = lineItems.data.map(item => ({
+        order_id: orderData.id,
         product_name: item.description || 'Premium Digital Resource',
         price: (item.amount_total || 0) / 100, // Cents to dollars
       }));
 
-      // 3. Write the nested Order document in MongoDB
-      const orderData = await Order.create({
-        user_id: userId,
-        user_email: userEmail,
-        total_amount: totalAmount,
-        status: 'completed',
-        stripe_session_id: stripeSessionId,
-        items: orderItems,
-      });
+      const { error: itemsError } = await supabaseAdmin
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
 
       console.log(`Successfully logged Stripe order for User ${userId}`);
       
@@ -106,9 +115,9 @@ export async function POST(req: Request): Promise<Response> {
         'evt_stripe_order_logged',
         'stripe',
         'success',
-        `Stripe order successfully written to MongoDB for ${userEmail}.`,
+        `Stripe order successfully written to Supabase for ${userEmail}.`,
         {
-          order_id: orderData._id.toString(),
+          order_id: orderData.id,
           user_id: userId,
           total_amount: totalAmount,
           items_count: orderItems.length,
@@ -129,6 +138,5 @@ export async function POST(req: Request): Promise<Response> {
 
   return NextResponse.json({ received: true }) as unknown as Response;
 }
-
 
 
