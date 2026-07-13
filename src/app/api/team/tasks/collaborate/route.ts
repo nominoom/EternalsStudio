@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '../../../../../lib/supabase';
+import { ProjectRequest, dbConnect } from '../../../../../lib/db';
 import { logEvent } from '../../../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
@@ -28,31 +28,42 @@ export async function POST(req: Request): Promise<Response> {
       ? `${user.firstName} ${user.lastName || ''}`.trim() 
       : user.emailAddresses?.[0]?.emailAddress || 'Team Collaborator';
 
+    await dbConnect();
+
     let collaborator;
     try {
-      // 4. Add to collaborators table
-      const { data, error: dbError } = await supabaseAdmin
-        .from('request_collaborators')
-        .insert([
-          {
-            request_id: requestId,
-            user_id: user.id,
-            user_name: userName,
+      // 4. Add to collaborators array in MongoDB
+      const updated = await ProjectRequest.findOneAndUpdate(
+        { _id: requestId, 'collaborators.user_id': { $ne: user.id } },
+        {
+          $push: {
+            collaborators: {
+              user_id: user.id,
+              user_name: userName,
+              joined_at: new Date()
+            }
           }
-        ])
-        .select()
-        .single();
+        },
+        { new: true }
+      );
 
-      if (dbError) {
-        // If already a collaborator, return early
-        if (dbError.code === '23505') { // Unique constraint violation code
-          return NextResponse.json({ success: true, message: 'Already a collaborator' }) as unknown as Response;
+      if (!updated) {
+        // If not updated, verify if request exists. If it does, user is already a collaborator
+        const requestExists = await ProjectRequest.findById(requestId);
+        if (!requestExists) {
+          throw new Error('Project request not found');
         }
-        throw dbError;
+        return NextResponse.json({ success: true, message: 'Already a collaborator' }) as unknown as Response;
       }
-      collaborator = data;
+
+      collaborator = {
+        request_id: requestId,
+        user_id: user.id,
+        user_name: userName,
+        joined_at: new Date().toISOString()
+      };
     } catch (dbErr: any) {
-      console.warn('[Supabase Bypass] Failed to add collaborator on database:', dbErr.message);
+      console.warn('[MongoDB Bypass] Failed to add collaborator on database:', dbErr.message);
       // Fallback: Return mock collaborator object
       collaborator = {
         id: `mock-collab-${Date.now()}`,
@@ -62,6 +73,7 @@ export async function POST(req: Request): Promise<Response> {
         joined_at: new Date().toISOString()
       };
     }
+
 
     // 5. Log collaboration join event
     await logEvent(

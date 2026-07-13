@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase';
+import { QuickBooksToken, dbConnect } from './db';
 
 const CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID || '';
 const CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET || '';
@@ -10,27 +10,16 @@ const BASE_URL = QB_ENV === 'production'
 
 const TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 
-interface QBToken {
-  access_token: string;
-  refresh_token: string;
-  expires_at: string;
-  refresh_expires_at: string;
-  realm_id: string;
-}
-
-// Get the current active token from Supabase, refreshing it if expired
+// Get the current active token from MongoDB, refreshing it if expired
 export async function getValidQBToken(): Promise<string> {
-  const { data: tokenData, error } = await supabaseAdmin
-    .from('quickbooks_tokens')
-    .select('*')
-    .eq('id', 1)
-    .single();
+  await dbConnect();
+  const tokenData = await QuickBooksToken.findOne({ customId: 'quickbooks_tokens' });
 
-  if (error || !tokenData) {
+  if (!tokenData) {
     throw new Error('QuickBooks OAuth token is not configured. Please run authentication first.');
   }
 
-  const { access_token, refresh_token, expires_at, realm_id } = tokenData as QBToken;
+  const { access_token, refresh_token, expires_at } = tokenData;
 
   // Check if access token is expired (add a 1-minute buffer)
   const isExpired = new Date(Date.now() + 60000) >= new Date(expires_at);
@@ -67,20 +56,22 @@ export async function getValidQBToken(): Promise<string> {
     const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
     const refreshExpiresAt = new Date(Date.now() + data.x_refresh_token_expires_in * 1000).toISOString();
 
-    // Save refreshed token to Supabase
-    const { error: updateError } = await supabaseAdmin
-      .from('quickbooks_tokens')
-      .update({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: expiresAt,
-        refresh_expires_at: refreshExpiresAt,
-      })
-      .eq('id', 1);
-
-    if (updateError) throw updateError;
+    // Save refreshed token to MongoDB
+    await QuickBooksToken.updateOne(
+      { customId: 'quickbooks_tokens' },
+      {
+        $set: {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: new Date(expiresAt),
+          refresh_expires_at: new Date(refreshExpiresAt),
+          updated_at: new Date()
+        }
+      }
+    );
 
     return data.access_token;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (refreshErr: any) {
     console.error('Error refreshing QuickBooks tokens:', refreshErr.message);
     throw refreshErr;
@@ -91,12 +82,10 @@ export async function getValidQBToken(): Promise<string> {
 export async function quickbooksRequest(
   endpoint: string,
   options: RequestInit = {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
-  const { data: tokenData } = await supabaseAdmin
-    .from('quickbooks_tokens')
-    .select('realm_id')
-    .eq('id', 1)
-    .single();
+  await dbConnect();
+  const tokenData = await QuickBooksToken.findOne({ customId: 'quickbooks_tokens' }, { realm_id: 1 });
 
   if (!tokenData) {
     throw new Error('QuickBooks company Realm ID not found in database.');
@@ -123,7 +112,7 @@ export async function quickbooksRequest(
   let data;
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (e) {
+  } catch {
     data = { rawResponse: text };
   }
 

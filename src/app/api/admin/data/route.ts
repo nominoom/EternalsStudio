@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { currentUser } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '../../../../lib/supabase';
+import { ContactMessage, SystemEvent, ProjectRequest, dbConnect } from '../../../../lib/db';
 import { logEvent } from '../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
@@ -21,6 +21,8 @@ export async function GET(req: Request): Promise<Response> {
     if (!isAdmin) {
       return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 }) as unknown as Response;
     }
+
+    await dbConnect();
 
     // 3. Log admin access audit event
     const adminEmail = user.emailAddresses?.[0]?.emailAddress || 'admin@eternals.gg';
@@ -49,48 +51,68 @@ export async function GET(req: Request): Promise<Response> {
       stripeOrders = [];
     }
 
-    // 5. Fetch contact messages from Supabase database
+    // 5. Fetch contact messages from MongoDB database
     let contactMessages: any[] = [];
     try {
-      const { data: dbMessages, error: dbError } = await supabaseAdmin
-        .from('contact_messages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (dbError) throw dbError;
-      contactMessages = dbMessages || [];
+      const dbMessages = await ContactMessage.find().sort({ created_at: -1 });
+      contactMessages = (dbMessages || []).map((msg) => ({
+        id: msg._id.toString(),
+        name: msg.name,
+        email: msg.email,
+        subject: msg.subject,
+        message: msg.message,
+        status: msg.status,
+        created_at: msg.created_at.toISOString(),
+      }));
     } catch (dbErr: any) {
-      console.warn('Supabase messages query failed, Admin dashboard will fall back to local mock data:', dbErr.message);
+      console.warn('MongoDB messages query failed, Admin dashboard will fall back to local mock data:', dbErr.message);
       contactMessages = [];
     }
 
-    // 6. Fetch system events from Supabase database
+    // 6. Fetch system events from MongoDB database
     let systemEvents: any[] = [];
     try {
-      const { data: dbEvents, error: dbError } = await supabaseAdmin
-        .from('system_events')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (dbError) throw dbError;
-      systemEvents = dbEvents || [];
+      const dbEvents = await SystemEvent.find().sort({ created_at: -1 });
+      systemEvents = (dbEvents || []).map((evt) => ({
+        id: evt._id.toString(),
+        event_key: evt.event_key,
+        category: evt.category,
+        status: evt.status,
+        message: evt.message,
+        metadata: evt.metadata,
+        created_at: evt.created_at.toISOString(),
+      }));
     } catch (dbErr: any) {
-      console.warn('Supabase events query failed, Admin dashboard will fall back to local mock data:', dbErr.message);
+      console.warn('MongoDB events query failed, Admin dashboard will fall back to local mock data:', dbErr.message);
       systemEvents = [];
     }
 
-    // 7. Fetch project requests from Supabase database
+    // 7. Fetch project requests from MongoDB database
     let projectRequests: any[] = [];
     try {
-      const { data: dbRequests, error: dbError } = await supabaseAdmin
-        .from('project_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (dbError) throw dbError;
-      projectRequests = dbRequests || [];
+      const dbRequests = await ProjectRequest.find().sort({ created_at: -1 });
+      projectRequests = (dbRequests || []).map((reqItem) => ({
+        id: reqItem._id.toString(),
+        client_name: reqItem.client_name,
+        client_email: reqItem.client_email,
+        client_phone: reqItem.client_phone,
+        subject: reqItem.subject,
+        description: reqItem.description,
+        file_url: reqItem.file_url,
+        status: reqItem.status,
+        assigned_to_id: reqItem.assigned_to_id,
+        assigned_to_name: reqItem.assigned_to_name,
+        invoice_url: reqItem.invoice_url,
+        invoice_amount: reqItem.invoice_amount,
+        collaborators: (reqItem.collaborators || []).map((collab) => ({
+          user_id: collab.user_id,
+          user_name: collab.user_name,
+          joined_at: collab.joined_at.toISOString(),
+        })),
+        created_at: reqItem.created_at.toISOString(),
+      }));
     } catch (dbErr: any) {
-      console.warn('Supabase project requests query failed:', dbErr.message);
+      console.warn('MongoDB project requests query failed:', dbErr.message);
       projectRequests = [];
     }
 
@@ -105,5 +127,6 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
   }
 }
+
 
 

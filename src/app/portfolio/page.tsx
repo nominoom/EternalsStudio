@@ -6,7 +6,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { ArrowRight, Trash2, X } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
-import { supabase } from '../../lib/supabase';
+// Supabase import removed, fetching from API route instead
 
 interface Project {
   id?: string;
@@ -300,12 +300,11 @@ export default function Portfolio() {
   useEffect(() => {
     async function loadPortfolio() {
       try {
-        const { data, error } = await supabase
-          .from('portfolio')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const response = await fetch('/api/portfolio');
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
 
-        if (!error && data) {
+        if (data) {
           setDbProjects(data.map((item: any) => ({
             id: item.id,
             title: item.title,
