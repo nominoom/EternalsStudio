@@ -38,6 +38,8 @@ export default function ClientPortal() {
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const [verifying, setVerifying] = useState<boolean>(false);
+
   // Helper to fetch and merge client requests
   async function fetchRequests(email: string) {
     let dbRequests: ProjectRequest[] = [];
@@ -83,33 +85,77 @@ export default function ClientPortal() {
       return;
     }
 
-    // Check if redirecting from a mock checkout payment
+    // Check if redirecting from a mock checkout payment or real checkout payment
     const urlParams = new URLSearchParams(window.location.search);
     const mockPayment = urlParams.get('mock_payment') === 'true';
     const requestId = urlParams.get('request_id');
+    const success = urlParams.get('success') === 'true';
+    const sessionId = urlParams.get('session_id');
 
-    if (mockPayment && requestId) {
-      // Mock update local storage status
-      const localRequests = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
-      const updated = localRequests.map((r: any) => 
-        r.id === requestId ? { ...r, status: 'approved' } : r
-      );
-      localStorage.setItem('localCustomRequests', JSON.stringify(updated));
+    async function handlePaymentRedirects() {
+      if (mockPayment && requestId) {
+        // 1. Update status in database
+        try {
+          const { error } = await supabase
+            .from('project_requests')
+            .update({ status: 'approved' })
+            .eq('id', requestId);
+          
+          if (error) throw error;
+          console.log('Successfully updated mock request status to approved in Supabase');
+        } catch (err: any) {
+          console.warn('Failed to update mock request status in database:', err.message);
+        }
 
-      // Alert mock checkouts
-      alert('Success: Mock payment complete! Your project status is updated to "Approved" (Paid) and has been delegated as an Open Task in the Team Portal.');
-      
-      // Clean URL params
-      window.history.replaceState({}, document.title, window.location.pathname);
+        // 2. Mock update local storage status
+        const localRequests = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
+        const updated = localRequests.map((r: any) => 
+          r.id === requestId ? { ...r, status: 'approved' } : r
+        );
+        localStorage.setItem('localCustomRequests', JSON.stringify(updated));
+
+        // Alert mock checkouts
+        alert('Success: Mock payment complete! Your project status is updated to "Approved" (Paid) and has been delegated as an Open Task in the Team Portal.');
+        
+        // Clean URL params
+        window.history.replaceState({}, document.title, window.location.pathname);
+        fetchRequests(email);
+      } else if (success && sessionId) {
+        setVerifying(true);
+        try {
+          const response = await fetch('/api/checkout/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          const data = await response.json();
+          if (response.ok && data.success) {
+            alert('Success: Your project invoice payment has been confirmed! Your request is now delegated as an active task in the Team Portal.');
+          } else {
+            alert(data.error || 'Payment verification completed, but could not update status. Please refresh or contact support.');
+          }
+        } catch (err: any) {
+          alert('Error verifying payment: ' + err.message);
+        } finally {
+          setVerifying(false);
+          // Clean URL params
+          window.history.replaceState({}, document.title, window.location.pathname);
+          fetchRequests(email);
+        }
+      } else {
+        fetchRequests(email);
+      }
     }
 
-    fetchRequests(email);
+    handlePaymentRedirects();
   }, [user, isLoaded, isSignedIn]);
 
-  if (!isLoaded || loading) {
+  if (!isLoaded || loading || verifying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 animate-pulse">Loading Client Dashboard...</p>
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 animate-pulse">
+          {verifying ? 'Verifying Stripe checkout payment status...' : 'Loading Client Dashboard...'}
+        </p>
       </div>
     );
   }

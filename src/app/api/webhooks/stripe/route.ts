@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
   apiVersion: '2026-06-24.dahlia',
 });
+
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
 export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
@@ -49,21 +52,58 @@ export async function POST(req: Request): Promise<Response> {
 
     if (checkoutType === 'project_invoice' && requestId) {
       try {
-        const { error: updateError } = await supabaseAdmin
+        // Fetch current request details to get client metadata
+        const { data: request, error: fetchError } = await supabaseAdmin
           .from('project_requests')
-          .update({ status: 'approved' })
-          .eq('id', requestId);
+          .select('*')
+          .eq('id', requestId)
+          .single();
 
-        if (updateError) throw updateError;
+        if (fetchError || !request) throw fetchError || new Error('Request not found');
 
-        console.log(`Successfully completed payment for project request ${requestId}`);
-        await logEvent(
-          'evt_project_invoice_paid',
-          'stripe',
-          'success',
-          `Client paid invoice for project request ID: ${requestId}. Delegated to Team Portal as Open Task.`,
-          { request_id: requestId, amount: (session.amount_total || 0) / 100 }
-        );
+        // Only update status and send confirmation if it wasn't already processed
+        if (request.status !== 'approved' && request.status !== 'claimed' && request.status !== 'completed') {
+          const { error: updateError } = await supabaseAdmin
+            .from('project_requests')
+            .update({ status: 'approved' })
+            .eq('id', requestId);
+
+          if (updateError) throw updateError;
+
+          // Dispatch confirmation email via Resend
+          const amount = (session.amount_total || 0) / 100;
+          const origin = req.headers.get('origin') || 'https://eternals.studio';
+          try {
+            await resend.emails.send({
+              from: 'Eternals Studio <onboarding@resend.dev>',
+              to: request.client_email,
+              subject: `Payment Confirmed & Project Approved: ${request.subject}`,
+              html: `
+                <div style="font-family: sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+                  <h2 style="color: #0d9488; font-weight: 800;">Eternals Studio Quote Paid</h2>
+                  <p>Hello <strong>${request.client_name}</strong>,</p>
+                  <p>Thank you for your payment! We have successfully received your payment of <strong>$${amount.toFixed(2)}</strong> for the project <strong>"${request.subject}"</strong>.</p>
+                  <p>Your project status has been updated to <strong>"Approved" (Paid)</strong> and has been delegated as an active task in the Team Portal. Our team is starting work immediately.</p>
+                  <p>You can track the progress of your project in real-time from your <a href="${origin}/client" style="color: #0d9488; font-weight: bold;">Client Dashboard</a>.</p>
+                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                  <p style="font-size: 11px; color: #94a3b8; text-align: center; margin: 0;">Eternals Studio &copy; 2026. All rights reserved.</p>
+                </div>
+              `,
+            });
+            console.log(`Webhook confirmation email sent to: ${request.client_email}`);
+          } catch (mailErr: any) {
+            console.warn('Webhook confirmation email bypassed or failed:', mailErr.message);
+          }
+
+          console.log(`Successfully completed payment for project request ${requestId}`);
+          await logEvent(
+            'evt_project_invoice_paid',
+            'stripe',
+            'success',
+            `Client paid invoice for project request ID: ${requestId}. Delegated to Team Portal as Open Task.`,
+            { request_id: requestId, amount }
+          );
+        }
         return NextResponse.json({ received: true }) as unknown as Response;
       } catch (dbError: any) {
         console.error('Failed to update project status on webhook invoice payment:', dbError.message);
