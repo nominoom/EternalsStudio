@@ -19,6 +19,7 @@ export default function Contact() {
   });
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
+  const [isOrganization, setIsOrganization] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +32,7 @@ export default function Contact() {
         clientName: `${formData.firstName} ${formData.lastName}`.trim(),
         clientEmail: formData.email,
         clientPhone: formData.phone,
-        subject: formData.subject,
+        subject: isOrganization && formData.company ? `[${formData.company}] ${formData.subject}` : formData.subject,
         description: formData.message,
         fileUrl: formData.fileUrl,
       } : formData;
@@ -186,17 +187,46 @@ export default function Contact() {
                 </div>
 
                 {formType === 'request' && (
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="phone" className="text-xs font-bold text-slate-600 dark:text-slate-400">Phone Number (For Callback)</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="(555) 000-0000"
-                      className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
-                      required
-                    />
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="phone" className="text-xs font-bold text-slate-600 dark:text-slate-400">Phone Number (For Callback)</label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="(555) 000-0000"
+                        className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-slate-600 dark:text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={isOrganization}
+                          onChange={(e) => setIsOrganization(e.target.checked)}
+                          className="rounded border-slate-300 text-teal-655 focus:ring-teal-500 h-4 w-4"
+                        />
+                        <span>Submit request on behalf of an Organization / Company?</span>
+                      </label>
+
+                      {isOrganization && (
+                        <div className="flex flex-col gap-1.5 animate-fadeIn">
+                          <label htmlFor="company" className="text-xs font-bold text-slate-600 dark:text-slate-400">Organization / Company Name</label>
+                          <input
+                            type="text"
+                            id="company"
+                            value={formData.company}
+                            onChange={handleChange}
+                            placeholder="e.g. Sentinels Esports"
+                            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                            required={isOrganization}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // 3. Parse and validate payload
-    const { requestId } = await req.json();
+    const { requestId, downloadUrl } = await req.json();
     if (!requestId) {
       return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 }) as unknown as Response;
     }
@@ -59,10 +59,13 @@ export async function POST(req: Request): Promise<Response> {
         throw new Error('Mock ID triggered fallback');
       }
 
-      // 6. Update task status to 'completed'
+      // 6. Update task status to 'completed' and add downloadUrl
       const { data, error: dbError } = await supabaseAdmin
         .from('project_requests')
-        .update({ status: 'completed' })
+        .update({ 
+          status: 'completed',
+          download_url: downloadUrl || null
+        })
         .eq('id', requestId)
         .select()
         .single();
@@ -77,6 +80,7 @@ export async function POST(req: Request): Promise<Response> {
       updatedTask = {
         id: requestId,
         status: 'completed',
+        download_url: downloadUrl || null,
         subject: task?.subject || 'Mock Task Spec (Completed)',
         description: 'Bypassed DB update due to network/configuration limits.',
         client_name: task?.client_name || 'Mock Client',

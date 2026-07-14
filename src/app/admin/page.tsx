@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   XCircle,
   Info,
-  Briefcase
+  Briefcase,
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 
 interface Order {
@@ -83,6 +85,8 @@ export default function AdminDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [deletedRequests, setDeletedRequests] = useState<any[]>([]);
+  const [requestsView, setRequestsView] = useState<'active' | 'deleted'>('active');
   const [quoteAmounts, setQuoteAmounts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -105,6 +109,28 @@ export default function AdminDashboard() {
     }
   }, [deployLogs]);
 
+  async function fetchAdminData() {
+    try {
+      const response = await fetch('/api/admin/data');
+      const data = await response.json();
+
+      setOrders(data.orders || mockOrders);
+      setMessages(data.messages || mockMessages);
+      setEvents(data.events || mockEvents);
+      setRequests(data.requests || []);
+      setDeletedRequests(data.deletedRequests || []);
+    } catch (err) {
+      console.log('Using local fallback admin details:', err);
+      setOrders(mockOrders);
+      setMessages(mockMessages);
+      setEvents(mockEvents);
+      setRequests([]);
+      setDeletedRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!isLoaded || !user) return;
 
@@ -115,28 +141,59 @@ export default function AdminDashboard() {
       return;
     }
 
-    async function fetchData() {
-      try {
-        const response = await fetch('/api/admin/data');
-        const data = await response.json();
-
-        setOrders(data.orders || mockOrders);
-        setMessages(data.messages || mockMessages);
-        setEvents(data.events || mockEvents);
-        setRequests(data.requests || []);
-      } catch (err) {
-        console.log('Using local fallback admin details:', err);
-        setOrders(mockOrders);
-        setMessages(mockMessages);
-        setEvents(mockEvents);
-        setRequests([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
+    fetchAdminData();
   }, [user, isLoaded]);
+
+  const handleSoftDeleteRequest = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project request? It will be moved to the Recycle Bin.')) return;
+    try {
+      const res = await fetch(`/api/admin/requests?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        alert('Request successfully moved to Recycle Bin.');
+        fetchAdminData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete request');
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handleRestoreRequest = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id })
+      });
+      if (res.ok) {
+        alert('Request successfully restored.');
+        fetchAdminData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to restore request');
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handlePurgeRequest = async (id: string) => {
+    if (!confirm('WARNING: Are you sure you want to PERMANENTLY delete this project request? This action cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/requests?id=${id}&purge=true`, { method: 'DELETE' });
+      if (res.ok) {
+        alert('Request permanently deleted.');
+        fetchAdminData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to purge request');
+      }
+    } catch (e: any) {
+      alert('Error: ' + e.message);
+    }
+  };
 
   if (!isLoaded || loading) {
     return (
@@ -284,11 +341,20 @@ export default function AdminDashboard() {
       <Navbar />
       <main className="flex-1 bg-transparent text-slate-900 dark:text-slate-50 py-12 px-6 sm:px-8">
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
-            <p className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
-              Manager panel &bull; Role: Admin
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
+              <p className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
+                Manager panel &bull; Role: Admin
+              </p>
+            </div>
+            <Link
+              href="/team"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 font-bold text-xs px-5 py-3 transition-all shadow-sm cursor-pointer self-start sm:self-auto"
+            >
+              <span>Go to Team Portal</span>
+              <ChevronRight size={14} />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -501,142 +567,227 @@ export default function AdminDashboard() {
 
             {activeTab === 'requests' && (
               <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
                   <div className="flex flex-col gap-1">
                     <h3 className="font-extrabold text-base">Client Project Requests</h3>
                     <p className="text-xs text-slate-500">Incoming client custom work proposals. Approve to delegate them to the team portal.</p>
                   </div>
+                  
+                  {/* Toggle view */}
+                  <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl self-start">
+                    <button
+                      onClick={() => setRequestsView('active')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        requestsView === 'active'
+                          ? 'bg-white dark:bg-slate-900 shadow-sm text-teal-600 dark:text-teal-400'
+                          : 'text-slate-500 hover:text-slate-950'
+                      }`}
+                    >
+                      Active ({requests.length})
+                    </button>
+                    <button
+                      onClick={() => setRequestsView('deleted')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        requestsView === 'deleted'
+                          ? 'bg-white dark:bg-slate-900 shadow-sm text-rose-500'
+                          : 'text-slate-500 hover:text-slate-950'
+                      }`}
+                    >
+                      Recycle Bin ({deletedRequests.length})
+                    </button>
+                  </div>
                 </div>
 
-                {requests.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-                    <span className="text-slate-400 dark:text-slate-655 font-bold text-sm">No project requests found</span>
-                    <span className="text-xs text-slate-400">Requests submitted by clients in the contact form will appear here.</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {requests.map((req) => (
-                      <div
-                        key={req.id}
-                        className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/50 dark:bg-slate-950/20 flex flex-col md:flex-row md:items-center justify-between gap-6"
-                      >
-                        <div className="flex flex-col gap-2 max-w-2xl">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="font-black text-sm text-slate-800 dark:text-slate-200">{req.subject}</span>
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                              req.status === 'pending'
-                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                                : req.status === 'approved'
-                                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                                  : req.status === 'claimed'
-                                    ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
-                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                            }`}>
-                              {req.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-pre-wrap">{req.description}</p>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2 pt-2 border-t border-slate-200/30 dark:border-slate-800/30">
-                            <span className="text-xs font-semibold text-slate-500">
-                              Client: <strong className="text-slate-700 dark:text-slate-350">{req.client_name}</strong> ({req.client_email})
-                            </span>
-                            {req.client_phone && (
+                {requestsView === 'active' ? (
+                  requests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                      <span className="text-slate-400 dark:text-slate-655 font-bold text-sm">No project requests found</span>
+                      <span className="text-xs text-slate-400">Requests submitted by clients in the contact form will appear here.</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {requests.map((req) => (
+                        <div
+                          key={req.id}
+                          className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/50 dark:bg-slate-950/20 flex flex-col md:flex-row md:items-center justify-between gap-6"
+                        >
+                          <div className="flex flex-col gap-2 max-w-2xl w-full">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="font-black text-sm text-slate-800 dark:text-slate-200">{req.subject}</span>
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                req.status === 'pending'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                  : req.status === 'approved'
+                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                    : req.status === 'claimed'
+                                      ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                                      : req.status === 'cancelled'
+                                        ? 'bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/20'
+                                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                              }`}>
+                                {req.status}
+                              </span>
+                              
+                              {/* Soft Delete Trigger */}
+                              <button
+                                onClick={() => handleSoftDeleteRequest(req.id)}
+                                className="ml-auto text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                                title="Move to Recycle Bin"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-pre-wrap">{req.description}</p>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2 pt-2 border-t border-slate-200/30 dark:border-slate-800/30">
                               <span className="text-xs font-semibold text-slate-500">
-                                Phone: <strong className="text-slate-700 dark:text-slate-350">{req.client_phone}</strong>
+                                Client: <strong className="text-slate-700 dark:text-slate-350">{req.client_name}</strong> ({req.client_email})
                               </span>
-                            )}
-                            {req.file_url && (
-                              <span className="text-xs font-semibold text-slate-500 col-span-2">
-                                Reference Link: <a href={req.file_url} target="_blank" rel="noopener noreferrer" className="text-teal-500 hover:underline inline-flex items-center gap-1">
-                                  {req.file_url.length > 40 ? req.file_url.substring(0, 40) + '...' : req.file_url}
-                                </a>
+                              {req.client_phone && (
+                                <span className="text-xs font-semibold text-slate-500">
+                                  Phone: <strong className="text-slate-700 dark:text-slate-350">{req.client_phone}</strong>
+                                </span>
+                              )}
+                              {req.file_url && (
+                                <span className="text-xs font-semibold text-slate-500 col-span-2">
+                                  Reference Link: <a href={req.file_url} target="_blank" rel="noopener noreferrer" className="text-teal-500 hover:underline inline-flex items-center gap-1">
+                                    {req.file_url.length > 40 ? req.file_url.substring(0, 40) + '...' : req.file_url}
+                                  </a>
+                                </span>
+                              )}
+                              {req.assigned_to_name && (
+                                <span className="text-xs font-semibold text-slate-500 col-span-2">
+                                  Assignee: <strong className="text-teal-600 dark:text-teal-400">{req.assigned_to_name}</strong>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {req.status === 'pending' && (
+                            <div className="flex flex-col gap-3 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-4 bg-white dark:bg-slate-900/50 min-w-[280px]">
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] font-black uppercase text-slate-400">Quote Price ($ USD)</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="100.00"
+                                  value={quoteAmounts[req.id] || ''}
+                                  onChange={(e) => setQuoteAmounts(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/10 transition-all font-bold text-slate-850 dark:text-slate-150"
+                                />
+                              </div>
+                              
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={async () => {
+                                    const price = parseFloat(quoteAmounts[req.id] || '');
+                                    if (isNaN(price) || price <= 0) {
+                                      alert('Please enter a valid price quote.');
+                                      return;
+                                    }
+                                    if (!confirm(`Approve & send invoice of $${price.toFixed(2)} to ${req.client_name}?`)) return;
+
+                                    try {
+                                      const response = await fetch('/api/admin/requests/invoice', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ requestId: req.id, amount: price })
+                                      });
+                                      const data = await response.json();
+                                      if (response.ok) {
+                                        alert('Invoice generated and sent successfully!');
+                                        fetchAdminData();
+                                      } else {
+                                        alert(data.error || 'Failed to invoice request');
+                                      }
+                                    } catch (e: any) {
+                                      alert('Error: ' + e.message);
+                                    }
+                                  }}
+                                  className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer shadow-sm text-center"
+                                >
+                                  Approve & Invoice Client
+                                </button>
+
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm('Directly approve this task and send it to Team Portal for free?')) return;
+                                    try {
+                                      const response = await fetch('/api/team/tasks/approve', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ requestId: req.id })
+                                      });
+                                      if (response.ok) {
+                                        alert('Request successfully approved and sent to team!');
+                                        fetchAdminData();
+                                      } else {
+                                        const data = await response.json();
+                                        alert(data.error || 'Failed to approve request');
+                                      }
+                                    } catch (e: any) {
+                                      alert('Error: ' + e.message);
+                                    }
+                                  }}
+                                  className="w-full bg-transparent border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-950 text-slate-500 font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer text-center"
+                                >
+                                  Send to Team (Free)
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  deletedRequests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                      <span className="text-slate-400 dark:text-slate-655 font-bold text-sm">Recycle Bin is empty</span>
+                      <span className="text-xs text-slate-450">Deleted requests will be stored here for 30 days before being permanently purged.</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {deletedRequests.map((req) => (
+                        <div
+                          key={req.id}
+                          className="border border-red-500/20 dark:border-red-500/10 rounded-2xl p-6 bg-red-500/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-6"
+                        >
+                          <div className="flex flex-col gap-2 max-w-2xl w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm text-slate-800 dark:text-slate-200">{req.subject}</span>
+                              <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                Deleted
                               </span>
-                            )}
-                            {req.assigned_to_name && (
-                              <span className="text-xs font-semibold text-slate-500 col-span-2">
-                                Assignee: <strong className="text-teal-600 dark:text-teal-400">{req.assigned_to_name}</strong>
-                              </span>
-                            )}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-450 font-medium whitespace-pre-wrap">{req.description}</p>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2 pt-2 border-t border-slate-200/10 dark:border-slate-800/10 text-[11px] text-slate-400">
+                              <span>Client: {req.client_name} ({req.client_email})</span>
+                              <span>Deleted: {new Date(req.deleted_at).toLocaleString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 min-w-[200px] justify-end">
+                            <button
+                              onClick={() => handleRestoreRequest(req.id)}
+                              className="bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                            >
+                              <RotateCcw size={10} />
+                              <span>Restore</span>
+                            </button>
+                            <button
+                              onClick={() => handlePurgeRequest(req.id)}
+                              className="bg-transparent border border-red-500/20 text-red-500 hover:bg-red-500/10 font-bold text-[10px] px-4 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                            >
+                              <Trash2 size={10} />
+                              <span>Purge</span>
+                            </button>
                           </div>
                         </div>
-
-                        {req.status === 'pending' && (
-                          <div className="flex flex-col gap-3 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl p-4 bg-white dark:bg-slate-900/50 min-w-[280px]">
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-[10px] font-black uppercase text-slate-400">Quote Price ($ USD)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="100.00"
-                                value={quoteAmounts[req.id] || ''}
-                                onChange={(e) => setQuoteAmounts(prev => ({ ...prev, [req.id]: e.target.value }))}
-                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/10 transition-all font-bold text-slate-850 dark:text-slate-150"
-                              />
-                            </div>
-                            
-                            <div className="flex flex-col gap-2">
-                              <button
-                                onClick={async () => {
-                                  const price = parseFloat(quoteAmounts[req.id] || '');
-                                  if (isNaN(price) || price <= 0) {
-                                    alert('Please enter a valid price quote.');
-                                    return;
-                                  }
-                                  if (!confirm(`Approve & send invoice of $${price.toFixed(2)} to ${req.client_name}?`)) return;
-
-                                  try {
-                                    const response = await fetch('/api/admin/requests/invoice', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ requestId: req.id, amount: price })
-                                    });
-                                    const data = await response.json();
-                                    if (response.ok) {
-                                      alert('Invoice generated and sent successfully!');
-                                      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'awaiting_payment', invoice_amount: price } : r));
-                                    } else {
-                                      alert(data.error || 'Failed to invoice request');
-                                    }
-                                  } catch (e: any) {
-                                    alert('Error: ' + e.message);
-                                  }
-                                }}
-                                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer shadow-sm text-center"
-                              >
-                                Approve & Invoice Client
-                              </button>
-
-                              <button
-                                onClick={async () => {
-                                  if (!confirm('Directly approve this task and send it to Team Portal for free?')) return;
-                                  try {
-                                    const response = await fetch('/api/team/tasks/approve', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ requestId: req.id })
-                                    });
-                                    if (response.ok) {
-                                      alert('Request successfully approved and sent to team!');
-                                      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'approved' } : r));
-                                    } else {
-                                      const data = await response.json();
-                                      alert(data.error || 'Failed to approve request');
-                                    }
-                                  } catch (e: any) {
-                                    alert('Error: ' + e.message);
-                                  }
-                                }}
-                                className="w-full bg-transparent border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-950 text-slate-500 font-bold text-[10px] py-2 rounded-lg transition-colors cursor-pointer text-center"
-                              >
-                                Send to Team (Free)
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             )}

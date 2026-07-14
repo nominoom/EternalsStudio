@@ -109,11 +109,13 @@ CREATE TABLE IF NOT EXISTS public.project_requests (
     subject TEXT NOT NULL,
     description TEXT NOT NULL,
     file_url TEXT,
-    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'claimed', 'completed'
+    status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'approved', 'claimed', 'completed', 'cancelled'
     assigned_to_id TEXT,
     assigned_to_name TEXT,
     invoice_url TEXT,
     invoice_amount NUMERIC,
+    download_url TEXT DEFAULT NULL,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 

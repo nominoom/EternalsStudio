@@ -14,6 +14,10 @@ export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature') || '';
 
+  console.log('[Stripe Webhook] Received HTTP POST request to /api/webhooks/stripe');
+  console.log('[Stripe Webhook] Signature present:', !!signature);
+  console.log('[Stripe Webhook] Webhook Secret present:', !!process.env.STRIPE_WEBHOOK_SECRET);
+
   let event: Stripe.Event;
 
   try {
@@ -22,6 +26,8 @@ export async function POST(req: Request): Promise<Response> {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
+    
+    console.log('[Stripe Webhook] Webhook signature verification successful. Event type:', event.type);
     
     // Log successful webhook verification
     await logEvent(
@@ -32,7 +38,7 @@ export async function POST(req: Request): Promise<Response> {
       { event_id: event.id, type: event.type }
     );
   } catch (err: any) {
-    console.error(`Webhook signature verification failed:`, err.message);
+    console.error(`[Stripe Webhook] Webhook signature verification failed:`, err.message);
     await logEvent(
       'evt_stripe_webhook_error',
       'stripe',
@@ -50,29 +56,49 @@ export async function POST(req: Request): Promise<Response> {
     const checkoutType = session.metadata?.type || '';
     const requestId = session.metadata?.request_id || '';
 
+    console.log('[Stripe Webhook] checkout.session.completed session details:', {
+      id: session.id,
+      payment_status: session.payment_status,
+      checkoutType,
+      requestId
+    });
+
     if (checkoutType === 'project_invoice' && requestId) {
+      console.log('[Stripe Webhook] Processing project request invoice payment for Request ID:', requestId);
       try {
         // Fetch current request details to get client metadata
+        console.log('[Stripe Webhook] Querying Supabase for project request details...');
         const { data: request, error: fetchError } = await supabaseAdmin
           .from('project_requests')
           .select('*')
           .eq('id', requestId)
           .single();
 
-        if (fetchError || !request) throw fetchError || new Error('Request not found');
+        if (fetchError || !request) {
+          console.error('[Stripe Webhook] Failed to find project request in database:', fetchError?.message || 'Not found');
+          throw fetchError || new Error('Request not found');
+        }
+
+        console.log('[Stripe Webhook] Found project request in DB. Current status:', request.status);
 
         // Only update status and send confirmation if it wasn't already processed
         if (request.status !== 'approved' && request.status !== 'claimed' && request.status !== 'completed') {
+          console.log('[Stripe Webhook] Updating project request status to "approved" in DB...');
           const { error: updateError } = await supabaseAdmin
             .from('project_requests')
             .update({ status: 'approved' })
             .eq('id', requestId);
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('[Stripe Webhook] Database update error:', updateError.message);
+            throw updateError;
+          }
+          console.log('[Stripe Webhook] Successfully updated project request status to "approved" in DB.');
 
           // Dispatch confirmation email via Resend
           const amount = (session.amount_total || 0) / 100;
           const origin = req.headers.get('origin') || 'https://eternals.studio';
+          console.log('[Stripe Webhook] Dispatching confirmation email via Resend to client:', request.client_email);
           try {
             await resend.emails.send({
               from: 'Eternals Studio <onboarding@resend.dev>',
@@ -90,12 +116,12 @@ export async function POST(req: Request): Promise<Response> {
                 </div>
               `,
             });
-            console.log(`Webhook confirmation email sent to: ${request.client_email}`);
+            console.log(`[Stripe Webhook] Webhook confirmation email sent to: ${request.client_email}`);
           } catch (mailErr: any) {
-            console.warn('Webhook confirmation email bypassed or failed:', mailErr.message);
+            console.warn('[Stripe Webhook] Webhook confirmation email bypassed or failed:', mailErr.message);
           }
 
-          console.log(`Successfully completed payment for project request ${requestId}`);
+          console.log(`[Stripe Webhook] Successfully completed payment for project request ${requestId}`);
           await logEvent(
             'evt_project_invoice_paid',
             'stripe',
@@ -103,12 +129,16 @@ export async function POST(req: Request): Promise<Response> {
             `Client paid invoice for project request ID: ${requestId}. Delegated to Team Portal as Open Task.`,
             { request_id: requestId, amount }
           );
+        } else {
+          console.log('[Stripe Webhook] Project request is already processed. Status:', request.status);
         }
         return NextResponse.json({ received: true }) as unknown as Response;
       } catch (dbError: any) {
-        console.error('Failed to update project status on webhook invoice payment:', dbError.message);
+        console.error('[Stripe Webhook] Failed to update project status on webhook invoice payment:', dbError.message);
         return NextResponse.json({ error: dbError.message }, { status: 500 }) as unknown as Response;
       }
+    } else {
+      console.log('[Stripe Webhook] Webhook does not match project_invoice metadata or missing request_id.');
     }
 
     const userId = session.metadata?.userId || '';

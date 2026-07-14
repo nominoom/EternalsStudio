@@ -4,6 +4,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key';
 
+if (typeof window !== 'undefined') {
+  console.log('[Supabase Client] Initializing in browser:', {
+    url: supabaseUrl,
+    anonKeyLength: supabaseAnonKey?.length,
+    isPlaceholderKey: supabaseAnonKey === 'placeholder-anon-key'
+  });
+}
+
 // Client for standard public/auth operations
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

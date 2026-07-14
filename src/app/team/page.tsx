@@ -35,6 +35,7 @@ interface Task {
   assigned_to_id?: string;
   assigned_to_name?: string;
   created_at: string;
+  download_url?: string;
   collaborators: Collaborator[];
 }
 
@@ -151,16 +152,18 @@ export default function TeamPortal() {
   };
 
   const handleCompleteTask = async (taskId: string) => {
-    if (!confirm('Confirm this task is complete? This moves it to the archive.')) return;
+    const downloadUrl = prompt('Please enter the final download link for the client assets (optional):') || '';
+    if (downloadUrl === null) return;
+    if (!confirm('Confirm this task is complete? This moves it to the client download space and archive.')) return;
     setActionLoadingId(taskId);
     try {
       const response = await fetch('/api/team/tasks/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId: taskId }),
+        body: JSON.stringify({ requestId: taskId, downloadUrl }),
       });
       if (response.ok) {
-        alert('Task marked as completed!');
+        alert('Task successfully completed and download link attached!');
         await fetchTasks();
       } else {
         const data = await response.json();
@@ -444,6 +447,15 @@ export default function TeamPortal() {
                           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                             Completed by Lead <strong className="text-teal-600 dark:text-teal-400">{task.assigned_to_name}</strong>
                           </span>
+                          {task.download_url && (
+                            <div className="flex items-center gap-1.5 mt-1 border-t border-slate-200/20 dark:border-slate-800/20 pt-1">
+                              <span className="text-[10px] text-slate-400 font-bold">Delivery Link:</span>
+                              <a href={task.download_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-teal-500 hover:underline flex items-center gap-0.5 font-bold">
+                                <span>Open Deliverables</span>
+                                <ExternalLink size={10} />
+                              </a>
+                            </div>
+                          )}
                         </div>
                         
                         <div className="text-xs text-slate-500">

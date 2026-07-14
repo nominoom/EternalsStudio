@@ -81,17 +81,39 @@ export async function GET(req: Request): Promise<Response> {
 
     // 7. Fetch project requests from Supabase database
     let projectRequests: any[] = [];
+    let deletedRequests: any[] = [];
     try {
+      // Inline purge: Permanently delete requests soft-deleted > 30 days ago
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      await supabaseAdmin
+        .from('project_requests')
+        .delete()
+        .lt('deleted_at', thirtyDaysAgo);
+
+      // Fetch active project requests (where deleted_at is null)
       const { data: dbRequests, error: dbError } = await supabaseAdmin
         .from('project_requests')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (dbError) throw dbError;
       projectRequests = dbRequests || [];
+
+      // Fetch soft-deleted project requests (within 30 days)
+      const { data: dbDeleted, error: dbDelError } = await supabaseAdmin
+        .from('project_requests')
+        .select('*')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (!dbDelError && dbDeleted) {
+        deletedRequests = dbDeleted;
+      }
     } catch (dbErr: any) {
       console.warn('Supabase project requests query failed:', dbErr.message);
       projectRequests = [];
+      deletedRequests = [];
     }
 
     return NextResponse.json({
@@ -99,6 +121,7 @@ export async function GET(req: Request): Promise<Response> {
       messages: contactMessages,
       events: systemEvents,
       requests: projectRequests,
+      deletedRequests: deletedRequests,
     }) as unknown as Response;
   } catch (error: any) {
     console.error('Admin API error:', error);

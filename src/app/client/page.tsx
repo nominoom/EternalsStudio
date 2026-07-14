@@ -14,7 +14,9 @@ import {
   ExternalLink, 
   HelpCircle,
   Play,
-  FileText
+  FileText,
+  XCircle,
+  X
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -26,9 +28,11 @@ interface ProjectRequest {
   subject: string;
   description: string;
   file_url?: string;
-  status: 'pending' | 'awaiting_payment' | 'approved' | 'claimed' | 'completed';
+  status: 'pending' | 'awaiting_payment' | 'approved' | 'claimed' | 'completed' | 'cancelled';
   invoice_url?: string;
   invoice_amount?: number;
+  download_url?: string;
+  deleted_at?: string;
   assigned_to_name?: string;
   created_at: string;
 }
@@ -42,6 +46,7 @@ export default function ClientPortal() {
 
   // Helper to fetch and merge client requests
   async function fetchRequests(email: string) {
+    console.log('[ClientPortal] fetchRequests called for email:', email);
     let dbRequests: ProjectRequest[] = [];
     try {
       const { data, error } = await supabase
@@ -50,11 +55,17 @@ export default function ClientPortal() {
         .eq('client_email', email)
         .order('created_at', { ascending: false });
 
+      if (error) {
+        console.error('[ClientPortal] Supabase query error:', error);
+      } else {
+        console.log(`[ClientPortal] Fetched ${data?.length || 0} requests from database:`, data);
+      }
+
       if (!error && data) {
         dbRequests = data as ProjectRequest[];
       }
     } catch (e) {
-      console.warn('Failed to query live database project requests:', e);
+      console.warn('[ClientPortal] Failed to query live database project requests:', e);
     }
 
     // Merge with localStorage custom requests (for offline/local testing)
@@ -72,15 +83,19 @@ export default function ClientPortal() {
   }
 
   useEffect(() => {
+    console.log('[ClientPortal] useEffect running. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
     if (!isLoaded) return;
 
     if (!isSignedIn) {
+      console.log('[ClientPortal] User not signed in, redirecting to sign-in...');
       window.location.href = `/sign-in?redirect_url=${window.location.href}`;
       return;
     }
 
     const email = user.emailAddresses?.[0]?.emailAddress;
+    console.log('[ClientPortal] Resolved Clerk email address:', email);
     if (!email) {
+      console.warn('[ClientPortal] No email address found for the signed-in user.');
       setLoading(false);
       return;
     }
@@ -92,23 +107,35 @@ export default function ClientPortal() {
     const success = urlParams.get('success') === 'true';
     const sessionId = urlParams.get('session_id');
 
+    console.log('[ClientPortal] URL parameters parsed:', {
+      mockPayment,
+      requestId,
+      success,
+      sessionId,
+      rawQuery: window.location.search
+    });
+
     async function handlePaymentRedirects() {
       if (mockPayment && requestId) {
+        console.log('[ClientPortal] Detected redirect from mock payment. Request ID:', requestId);
         // 1. Update status in database
         try {
+          console.log('[ClientPortal] Attempting to update database status to approved for request:', requestId);
           const { error } = await supabase
             .from('project_requests')
             .update({ status: 'approved' })
             .eq('id', requestId);
           
           if (error) throw error;
-          console.log('Successfully updated mock request status to approved in Supabase');
+          console.log('[ClientPortal] Successfully updated mock request status to approved in Supabase');
         } catch (err: any) {
-          console.warn('Failed to update mock request status in database:', err.message);
+          console.error('[ClientPortal] Failed to update mock request status in database:', err.message);
         }
 
         // 2. Mock update local storage status
+        console.log('[ClientPortal] Updating status to approved in localStorage');
         const localRequests = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
+        console.log('[ClientPortal] Current local storage custom requests count:', localRequests.length);
         const updated = localRequests.map((r: any) => 
           r.id === requestId ? { ...r, status: 'approved' } : r
         );
@@ -118,31 +145,39 @@ export default function ClientPortal() {
         alert('Success: Mock payment complete! Your project status is updated to "Approved" (Paid) and has been delegated as an Open Task in the Team Portal.');
         
         // Clean URL params
+        console.log('[ClientPortal] Cleaning URL params from browser address bar...');
         window.history.replaceState({}, document.title, window.location.pathname);
         fetchRequests(email);
       } else if (success && sessionId) {
+        console.log('[ClientPortal] Detected redirect from Stripe success session. Session ID:', sessionId);
         setVerifying(true);
         try {
+          console.log('[ClientPortal] Calling verify API route /api/checkout/verify...');
           const response = await fetch('/api/checkout/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId })
           });
           const data = await response.json();
+          console.log('[ClientPortal] Verify API response:', data);
           if (response.ok && data.success) {
             alert('Success: Your project invoice payment has been confirmed! Your request is now delegated as an active task in the Team Portal.');
           } else {
+            console.error('[ClientPortal] Verification failed on server:', data.error);
             alert(data.error || 'Payment verification completed, but could not update status. Please refresh or contact support.');
           }
         } catch (err: any) {
+          console.error('[ClientPortal] Network error during payment verification:', err.message);
           alert('Error verifying payment: ' + err.message);
         } finally {
           setVerifying(false);
           // Clean URL params
+          console.log('[ClientPortal] Cleaning URL params from browser address bar...');
           window.history.replaceState({}, document.title, window.location.pathname);
           fetchRequests(email);
         }
       } else {
+        console.log('[ClientPortal] No payment redirect parameters detected. Fetching normal request history...');
         fetchRequests(email);
       }
     }
@@ -167,6 +202,7 @@ export default function ClientPortal() {
       case 'approved': return 'Approved (In Queue)';
       case 'claimed': return 'In Progress';
       case 'completed': return 'Completed';
+      case 'cancelled': return 'Cancelled';
     }
   };
 
@@ -177,11 +213,20 @@ export default function ClientPortal() {
       case 'approved': return <CheckCircle2 className="text-emerald-500" size={18} />;
       case 'claimed': return <Play className="text-teal-500" size={18} />;
       case 'completed': return <CheckCircle2 className="text-teal-650" size={18} />;
+      case 'cancelled': return <XCircle className="text-rose-500" size={18} />;
     }
   };
 
   // Helper to draw stages steps pipeline
   const renderPipeline = (currentStatus: ProjectRequest['status']) => {
+    if (currentStatus === 'cancelled') {
+      return (
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs font-bold text-rose-500 flex items-center gap-1.5">
+          <XCircle size={16} />
+          <span>This project request has been cancelled.</span>
+        </div>
+      );
+    }
     const stages: { key: ProjectRequest['status']; label: string }[] = [
       { key: 'pending', label: '1. Reviewing' },
       { key: 'awaiting_payment', label: '2. Quote' },
@@ -345,6 +390,59 @@ export default function ClientPortal() {
                             <span>Pay Custom Quote Invoice (${Number(req.invoice_amount).toFixed(2)})</span>
                           </a>
                         </div>
+                      )}
+
+                      {/* Download link for completed projects */}
+                      {req.status === 'completed' && req.download_url && (
+                        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-2">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="text-emerald-500" size={24} />
+                            <div className="flex flex-col text-left">
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">Assets Delivered!</span>
+                              <span className="text-[10px] text-slate-500 mt-0.5">Your project is completed. Click below to download the final source files.</span>
+                            </div>
+                          </div>
+                          <a
+                            href={req.download_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-3 rounded-xl transition-all shadow-md flex items-center gap-1.5 text-center cursor-pointer w-full sm:w-auto justify-center"
+                          >
+                            <ExternalLink size={14} />
+                            <span>Download Delivered Assets</span>
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Cancellation Button */}
+                      {(req.status === 'pending' || req.status === 'awaiting_payment') && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Are you sure you want to cancel this project request?')) return;
+                            try {
+                              const email = user?.emailAddresses?.[0]?.emailAddress;
+                              if (!email) return;
+                              const res = await fetch('/api/requests/cancel', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ requestId: req.id })
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                alert('Project request cancelled successfully.');
+                                fetchRequests(email);
+                              } else {
+                                alert(data.error || 'Failed to cancel request');
+                              }
+                            } catch (e: any) {
+                              alert('Error cancelling request: ' + e.message);
+                            }
+                          }}
+                          className="bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-2 rounded-xl text-[10px] font-bold tracking-tight transition-all w-fit cursor-pointer flex items-center gap-1 mt-2"
+                        >
+                          <X size={10} />
+                          <span>Cancel Request</span>
+                        </button>
                       )}
 
                       {/* Visual Steps */}
