@@ -16,9 +16,25 @@ import {
   Play,
   FileText,
   XCircle,
-  X
+  X,
+  Upload,
+  Building2,
+  User,
+  Paperclip,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+
+interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  uploaded_at: string;
+  uploaded_by_email?: string;
+  uploaded_by_name?: string;
+}
 
 interface ProjectRequest {
   id: string;
@@ -34,6 +50,9 @@ interface ProjectRequest {
   download_url?: string;
   deleted_at?: string;
   assigned_to_name?: string;
+  scope_type?: 'personal' | 'organization';
+  organization_name?: string;
+  attachments?: Attachment[];
   created_at: string;
 }
 
@@ -41,8 +60,9 @@ export default function ClientPortal() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
   const [verifying, setVerifying] = useState<boolean>(false);
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'personal' | 'organization'>('all');
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   // Helper to fetch and merge client requests
   async function fetchRequests(email: string) {
@@ -275,6 +295,58 @@ export default function ClientPortal() {
     );
   };
 
+  const handleFileUpload = async (requestId: string, file: File) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit.');
+      return;
+    }
+
+    setUploadingId(requestId);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const fileData = reader.result as string;
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId,
+            fileName: file.name,
+            fileData,
+            fileSize: file.size,
+            fileType: file.type,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok && data.attachment) {
+          setRequests((prev) =>
+            prev.map((req) => {
+              if (req.id === requestId) {
+                const existing = req.attachments || [];
+                return { ...req, attachments: [data.attachment, ...existing] };
+              }
+              return req;
+            })
+          );
+          alert(`File "${file.name}" uploaded successfully to your portal!`);
+        } else {
+          alert(data.error || 'Failed to upload file');
+        }
+        setUploadingId(null);
+      };
+      reader.onerror = () => {
+        alert('Failed to read file.');
+        setUploadingId(null);
+      };
+    } catch (e: any) {
+      alert('Error uploading file: ' + e.message);
+      setUploadingId(null);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -304,9 +376,47 @@ export default function ClientPortal() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-3xl p-6 md:p-8 shadow-sm min-h-[400px]">
             
             <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100">Project Pipeline</h3>
-                <p className="text-xs text-slate-500">Track quotes, payments, active assignments, and timeline completion states.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100">Project Pipeline</h3>
+                  <p className="text-xs text-slate-500">Track quotes, payments, active assignments, file attachments, and completion states.</p>
+                </div>
+
+                {/* Scope Filter Bar (Personal vs Organization) */}
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40 self-start sm:self-auto">
+                  <button
+                    onClick={() => setScopeFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      scopeFilter === 'all'
+                        ? 'bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    All Projects ({requests.length})
+                  </button>
+                  <button
+                    onClick={() => setScopeFilter('personal')}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      scopeFilter === 'personal'
+                        ? 'bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <User size={12} />
+                    <span>Personal</span>
+                  </button>
+                  <button
+                    onClick={() => setScopeFilter('organization')}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      scopeFilter === 'organization'
+                        ? 'bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Building2 size={12} />
+                    <span>Organization</span>
+                  </button>
+                </div>
               </div>
 
               {requests.length === 0 ? (
@@ -325,14 +435,35 @@ export default function ClientPortal() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-6">
-                  {requests.map((req) => (
+                  {requests
+                    .filter((req) => {
+                      if (scopeFilter === 'personal') return req.scope_type !== 'organization';
+                      if (scopeFilter === 'organization') return req.scope_type === 'organization';
+                      return true;
+                    })
+                    .map((req) => (
                     <div 
                       key={req.id}
                       className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/30 dark:bg-slate-950/20 flex flex-col gap-5 transition-all hover:border-slate-350 dark:hover:border-slate-800"
                     >
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex flex-col gap-1">
-                          <span className="font-black text-base text-slate-850 dark:text-slate-250">{req.subject}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-black text-base text-slate-850 dark:text-slate-250">{req.subject}</span>
+                            
+                            {/* Scope Badge (Personal vs Organization) */}
+                            {req.scope_type === 'organization' ? (
+                              <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-2.5 py-0.5 rounded-full">
+                                <Building2 size={10} />
+                                <span>Org: {req.organization_name || 'Team/Org'}</span>
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/40 px-2.5 py-0.5 rounded-full">
+                                <User size={10} />
+                                <span>Personal</span>
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] text-slate-400">Created: {new Date(req.created_at).toLocaleDateString()}</span>
                         </div>
                         
@@ -352,17 +483,78 @@ export default function ClientPortal() {
 
                       <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 whitespace-pre-wrap">{req.description}</p>
 
-                      {/* File specs download links */}
-                      {req.file_url && (
-                        <div className="flex items-center gap-2 text-xs text-slate-450 border border-slate-200/30 dark:border-slate-800/30 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-905 w-fit">
-                          <FileText size={14} className="text-teal-500" />
-                          <span>Attached References:</span>
-                          <a href={req.file_url} target="_blank" rel="noopener noreferrer" className="text-teal-500 hover:underline flex items-center gap-0.5 font-bold">
-                            <span>Open Link</span>
-                            <ExternalLink size={10} />
-                          </a>
+                      {/* File specs & Attached Files Section */}
+                      <div className="flex flex-col gap-3 border-t border-b border-slate-100 dark:border-slate-800/80 py-3">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <Paperclip size={14} className="text-teal-500" />
+                            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                              Attached Portal Files ({req.attachments?.length || 0})
+                            </span>
+                          </div>
+
+                          <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 text-xs font-bold transition-all cursor-pointer">
+                            {uploadingId === req.id ? (
+                              <>
+                                <Loader2 size={12} className="animate-spin" />
+                                <span>Uploading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={12} />
+                                <span>Upload & Attach File</span>
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              className="hidden"
+                              disabled={uploadingId === req.id}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileUpload(req.id, file);
+                              }}
+                            />
+                          </label>
                         </div>
-                      )}
+
+                        {req.file_url && (
+                          <div className="flex items-center gap-2 text-xs text-slate-450 border border-slate-200/30 dark:border-slate-800/30 rounded-xl px-3 py-1.5 bg-white dark:bg-slate-905 w-fit">
+                            <FileText size={12} className="text-teal-500" />
+                            <span>Initial Specification URL:</span>
+                            <a href={req.file_url} target="_blank" rel="noopener noreferrer" className="text-teal-500 hover:underline flex items-center gap-0.5 font-bold">
+                              <span>Open</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        )}
+
+                        {req.attachments && req.attachments.length > 0 && (
+                          <div className="flex flex-col gap-2 mt-1">
+                            {req.attachments.map((att) => (
+                              <div
+                                key={att.id}
+                                className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-2.5 text-xs"
+                              >
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <FileText size={14} className="text-teal-500 shrink-0" />
+                                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{att.name}</span>
+                                  <span className="text-[10px] text-slate-400">({(att.size / 1024).toFixed(1)} KB)</span>
+                                </div>
+                                <a
+                                  href={att.url}
+                                  download={att.name}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-teal-500 hover:underline font-bold text-xs shrink-0 flex items-center gap-1"
+                                >
+                                  <span>Download</span>
+                                  <ExternalLink size={10} />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Project Assignee Details */}
                       {req.assigned_to_name && (

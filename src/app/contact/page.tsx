@@ -35,6 +35,8 @@ export default function Contact() {
         subject: isOrganization && formData.company ? `[${formData.company}] ${formData.subject}` : formData.subject,
         description: formData.message,
         fileUrl: formData.fileUrl,
+        scopeType: isOrganization ? 'organization' : 'personal',
+        organizationName: isOrganization ? formData.company : '',
       } : formData;
 
       const res = await fetch(endpoint, {

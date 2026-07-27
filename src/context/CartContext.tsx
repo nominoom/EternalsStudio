@@ -21,7 +21,7 @@ interface CartContextType {
   clearCart: () => void;
   toggleCart: () => void;
   setIsCartOpen: (isOpen: boolean) => void;
-  handleCheckout: () => Promise<void>;
+  handleCheckout: (options?: { scopeType?: string; organizationName?: string }) => Promise<void>;
   cartTotal: number;
 }
 
@@ -77,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsCartOpen((prev) => !prev);
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (options?: { scopeType?: string; organizationName?: string }) => {
     if (!isSignedIn) {
       alert('Please Sign In to complete your purchase.');
       window.location.href = `/sign-in?redirect_url=${window.location.href}`;
@@ -94,7 +94,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart }),
+        body: JSON.stringify({ 
+          items: cart,
+          scopeType: options?.scopeType || 'personal',
+          organizationName: options?.organizationName || '',
+        }),
       });
       const data = await res.json();
       if (data.url) {

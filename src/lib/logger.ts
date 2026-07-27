@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase';
 
-export type EventCategory = 'deployment' | 'stripe' | 'quickbooks' | 'database' | 'auth' | 'contact';
+export type EventCategory = 'deployment' | 'stripe' | 'quickbooks' | 'database' | 'auth' | 'contact' | 'client';
 export type EventStatus = 'info' | 'success' | 'warning' | 'error';
 
 export interface SystemEvent {

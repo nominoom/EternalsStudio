@@ -16,6 +16,8 @@ export default function CartDrawer() {
   } = useCart();
 
   const [mounted, setMounted] = useState(false);
+  const [scopeType, setScopeType] = useState<'personal' | 'organization'>('personal');
+  const [organizationName, setOrganizationName] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -141,15 +143,56 @@ export default function CartDrawer() {
                 </span>
               </div>
 
+              {/* Purchase Scope Selector (Personal vs Organization) */}
+              <div className="flex flex-col gap-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-3">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Purchase Account Scope:
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScopeType('personal')}
+                    className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      scopeType === 'personal'
+                        ? 'bg-teal-500 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    👤 Personal Use
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScopeType('organization')}
+                    className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      scopeType === 'organization'
+                        ? 'bg-teal-500 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    🏢 Organization
+                  </button>
+                </div>
+
+                {scopeType === 'organization' && (
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="Enter Organization / Team Name..."
+                    className="mt-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:outline-none focus:border-teal-500"
+                  />
+                )}
+              </div>
+
               <div className="rounded-xl bg-slate-100/50 p-3 dark:bg-slate-900/50 flex items-center gap-2">
                 <ShieldCheck size={16} className="text-teal-500 shrink-0" />
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 leading-normal">
-                  Secure Checkout powered by Stripe. Downloads are delivered instantly via email.
+                  Secure Checkout powered by Stripe. Projects & digital items appear in your Client Portal.
                 </span>
               </div>
 
               <button
-                onClick={handleCheckout}
+                onClick={() => handleCheckout({ scopeType, organizationName })}
                 disabled={checkoutLoading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 py-3 font-bold text-sm text-white shadow-md shadow-teal-500/10 hover:from-teal-500 hover:to-indigo-600 hover:shadow-teal-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
               >
@@ -160,7 +203,7 @@ export default function CartDrawer() {
                   </>
                 ) : (
                   <>
-                    <span>Proceed to Checkout</span>
+                    <span>Proceed to Checkout ({scopeType === 'organization' ? 'Organization' : 'Personal'})</span>
                     <ArrowRight size={16} />
                   </>
                 )}

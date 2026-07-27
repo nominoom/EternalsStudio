@@ -51,6 +51,11 @@ export async function GET(req: Request): Promise<Response> {
           description: 'Need a custom overlay package designed for stream panels and twitch overlays.',
           file_url: 'https://figma.com/file/mock-specs',
           status: 'approved',
+          invoice_amount: 850.00,
+          payout_cut_percentage: 70.0,
+          scope_type: 'organization',
+          organization_name: 'Apex eSports',
+          attachments: [],
           created_at: new Date(Date.now() - 3600000).toISOString(),
         },
         {
@@ -64,6 +69,11 @@ export async function GET(req: Request): Promise<Response> {
           status: 'claimed',
           assigned_to_id: user.id, // Assign to current user so they can test completion
           assigned_to_name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Lead Developer',
+          invoice_amount: 1400.00,
+          payout_cut_percentage: 70.0,
+          scope_type: 'personal',
+          organization_name: '',
+          attachments: [],
           created_at: new Date(Date.now() - 86400000).toISOString(),
         }
       ];

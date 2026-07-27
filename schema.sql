@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
     total_amount NUMERIC(10, 2) NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'completed', 'failed'
     stripe_session_id TEXT UNIQUE,
+    scope_type TEXT NOT NULL DEFAULT 'personal', -- 'personal', 'organization'
+    organization_name TEXT,
+    attachments JSONB DEFAULT '[]'::JSONB,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
@@ -116,6 +119,10 @@ CREATE TABLE IF NOT EXISTS public.project_requests (
     invoice_amount NUMERIC,
     download_url TEXT DEFAULT NULL,
     deleted_at TIMESTAMPTZ DEFAULT NULL,
+    scope_type TEXT NOT NULL DEFAULT 'personal', -- 'personal', 'organization'
+    organization_name TEXT,
+    attachments JSONB DEFAULT '[]'::JSONB,
+    payout_cut_percentage NUMERIC DEFAULT 70.0,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 

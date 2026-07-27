@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { items } = await req.json();
+    const { items, scopeType = 'personal', organizationName = '' } = await req.json();
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
@@ -44,8 +44,10 @@ export async function POST(req: Request) {
         userId: userId,
         userEmail: email,
         productNames: items.map((item: any) => item.name).join(', '),
+        scopeType: scopeType,
+        organizationName: organizationName || '',
       },
-      success_url: `${req.headers.get('origin')}/store?success=true`,
+      success_url: `${req.headers.get('origin')}/store?success=true&scope=${scopeType}`,
       cancel_url: `${req.headers.get('origin')}/store?canceled=true`,
     });
 

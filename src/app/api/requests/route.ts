@@ -4,7 +4,18 @@ import { logEvent } from '../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { clientName, clientEmail, clientPhone, subject, description, fileUrl } = await req.json();
+    const { 
+      clientName, 
+      clientEmail, 
+      clientPhone, 
+      subject, 
+      description, 
+      fileUrl, 
+      scopeType = 'personal', 
+      organizationName = '', 
+      attachments = [],
+      payoutCutPercentage = 70.0
+    } = await req.json();
 
     if (!clientName || !clientEmail || !subject || !description) {
       return NextResponse.json({ error: 'Missing required fields: clientName, clientEmail, subject, description' }, { status: 400 }) as unknown as Response;
@@ -24,6 +35,10 @@ export async function POST(req: Request): Promise<Response> {
             description,
             file_url: fileUrl || '',
             status: 'pending',
+            scope_type: scopeType,
+            organization_name: organizationName || null,
+            attachments: attachments,
+            payout_cut_percentage: payoutCutPercentage,
           }
         ])
         .select()
@@ -45,6 +60,10 @@ export async function POST(req: Request): Promise<Response> {
         description,
         file_url: fileUrl || '',
         status: 'pending',
+        scope_type: scopeType,
+        organization_name: organizationName || '',
+        attachments: attachments,
+        payout_cut_percentage: payoutCutPercentage,
         created_at: new Date().toISOString(),
       };
     }
