@@ -2,7 +2,22 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
-import { X, Shield, Plus, Loader2, Play, CheckCircle2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { 
+  X, 
+  Shield, 
+  Plus, 
+  Loader2, 
+  Play, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Eye, 
+  EyeOff,
+  Upload,
+  Image as ImageIcon,
+  Sparkles,
+  Trash2,
+  Tag
+} from 'lucide-react';
 
 export default function AdminSidebar() {
   const {
@@ -35,6 +50,33 @@ export default function AdminSidebar() {
   const [portDescription, setPortDescription] = useState('');
   const [portTags, setPortTags] = useState('');
   const [portImageUrl, setPortImageUrl] = useState('');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'portfolio') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setFeedback({ type: 'error', message: 'Please select a valid image file (PNG, JPG, WEBP, SVG).' });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setFeedback({ type: 'error', message: 'Image size should be less than 10MB.' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      if (target === 'product') {
+        setImageUrl(dataUrl);
+      } else {
+        setPortImageUrl(dataUrl);
+      }
+      setFeedback({ type: 'success', message: `Loaded image "${file.name}"!` });
+    };
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -396,24 +438,97 @@ export default function AdminSidebar() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Image URL (Optional)</label>
+                {/* Image File Uploader & URL Input for Store Product */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Product Image File or URL</label>
+                  
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 text-xs font-bold transition-all cursor-pointer">
+                      <Upload size={14} />
+                      <span>Upload Image File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, 'product')}
+                      />
+                    </label>
+                  </div>
+
                   <input
                     type="text"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://example.com/image.png"
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    placeholder="Or paste image URL (e.g. https://...)"
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500"
                   />
+
+                  {imageUrl && (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <img src={imageUrl} alt="Thumbnail" className="w-8 h-8 rounded-lg object-cover" />
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">Image loaded</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Store Card Preview */}
+                <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-slate-200/40 dark:border-slate-800/40">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1">
+                    <Sparkles size={12} />
+                    <span>Live Card Preview</span>
+                  </span>
+
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-xs p-4 flex flex-col gap-3">
+                    <div className="aspect-[5/3] w-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 rounded-xl overflow-hidden flex items-center justify-center relative">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center text-slate-400 dark:text-slate-600 gap-1">
+                          <Sparkles size={28} className="text-teal-500/40" />
+                          <span className="text-[10px] font-bold">Image Preview</span>
+                        </div>
+                      )}
+                      <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wider bg-teal-500 text-white px-2 py-0.5 rounded-md">
+                        {category}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                        {name || 'Product Title Preview'}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        {description || 'Product description preview will appear here...'}
+                      </p>
+                      <div className="flex items-center justify-between pt-2 mt-1 border-t border-slate-100 dark:border-slate-800">
+                        <span className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
+                          ${price && !isNaN(parseFloat(price)) ? parseFloat(price).toFixed(2) : '0.00'}
+                        </span>
+                        <span className="bg-teal-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-xs">
+                          Add to Cart
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-650 text-white font-bold py-3 hover:bg-teal-700 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 shadow-md disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {loading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                  <span>Add Product to Store</span>
+                  <span>Confirm & Add Product to Store</span>
                 </button>
               </form>
             </div>
@@ -488,24 +603,101 @@ export default function AdminSidebar() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Image URL</label>
+                {/* Image File Uploader & URL Input for Portfolio Item */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Project Image File or URL</label>
+
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 text-xs font-bold transition-all cursor-pointer">
+                      <Upload size={14} />
+                      <span>Upload Project Image File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, 'portfolio')}
+                      />
+                    </label>
+                  </div>
+
                   <input
                     type="text"
                     value={portImageUrl}
                     onChange={(e) => setPortImageUrl(e.target.value)}
-                    placeholder="https://example.com/project-cover.png"
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all"
+                    placeholder="Or paste image URL (e.g. https://...)"
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500"
                   />
+
+                  {portImageUrl && (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <img src={portImageUrl} alt="Thumbnail" className="w-8 h-8 rounded-lg object-cover" />
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">Image loaded</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPortImageUrl('')}
+                        className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Portfolio Card Preview */}
+                <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-slate-200/40 dark:border-slate-800/40">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1">
+                    <Sparkles size={12} />
+                    <span>Live Card Preview</span>
+                  </span>
+
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-xs p-4 flex flex-col gap-3">
+                    <div className="aspect-[5/3] w-full bg-gradient-to-br from-indigo-900/30 to-slate-900/30 rounded-xl overflow-hidden flex items-center justify-center relative">
+                      {portImageUrl ? (
+                        <img src={portImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center text-slate-400 dark:text-slate-600 gap-1">
+                          <ImageIcon size={28} />
+                          <span className="text-[10px] font-bold">Image Preview</span>
+                        </div>
+                      )}
+                      <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wider bg-indigo-500 text-white px-2 py-0.5 rounded-md">
+                        {portCategory}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">
+                        {portSubtitle || 'Category Subtitle'}
+                      </span>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                        {portTitle || 'Project Title Preview'}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        {portDescription || 'Portfolio project description preview will appear here...'}
+                      </p>
+                      {portTags && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {portTags.split(',').map((tag, idx) => (
+                            <span key={idx} className="text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-md">
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-650 text-white font-bold py-3 hover:bg-teal-700 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 shadow-md disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {loading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                  <span>Upload Portfolio Item</span>
+                  <span>Confirm & Upload Portfolio Item</span>
                 </button>
               </form>
             </div>
