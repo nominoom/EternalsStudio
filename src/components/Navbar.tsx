@@ -144,31 +144,34 @@ export default function Navbar() {
                   </svg>
                 </button>
                 {profileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg z-20">
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200/60 dark:border-slate-800/60 z-20 py-1 overflow-hidden">
                     <ul className="py-1">
                       <li>
                         <Link
                           href="/client"
-                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="block px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         >
                           Client Dashboard
                         </Link>
                       </li>
-                      {user?.publicMetadata?.role === 'team' && (
+                      {isTeamOrAdmin && (
                         <li>
                           <Link
                             href="/team"
-                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="block px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                           >
                             Team Portal
                           </Link>
                         </li>
                       )}
-                      {user?.publicMetadata?.role === 'admin' && (
+                      {hasAdminPrivileges && (
                         <li>
                           <Link
                             href="/admin"
-                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="block px-4 py-2 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                           >
                             Admin Panel
                           </Link>
@@ -234,7 +237,27 @@ export default function Navbar() {
             <hr className="border-slate-200/60 dark:border-slate-800/60 my-2" />
             {isSignedIn ? (
               <>
-                {user?.publicMetadata?.role === 'admin' && (
+                <li>
+                  <Link
+                    href="/client"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-base font-bold text-slate-700 dark:text-slate-300 hover:text-teal-500"
+                  >
+                    Client Dashboard
+                  </Link>
+                </li>
+                {isTeamOrAdmin && (
+                  <li>
+                    <Link
+                      href="/team"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-base font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                    >
+                      Team Portal
+                    </Link>
+                  </li>
+                )}
+                {hasAdminPrivileges && (
                   <li>
                     <Link
                       href="/admin"

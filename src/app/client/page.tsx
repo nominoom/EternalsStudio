@@ -88,17 +88,23 @@ export default function ClientPortal() {
       console.warn('[ClientPortal] Failed to query live database project requests:', e);
     }
 
-    // Merge with localStorage custom requests (for offline/local testing)
     const localRequests = typeof window !== 'undefined' 
       ? JSON.parse(localStorage.getItem('localCustomRequests') || '[]') 
       : [];
 
-    // Filter out duplicates (if any local request is now in the database)
-    const uniqueLocal = localRequests.filter(
-      (lr: any) => !dbRequests.some((dr: any) => dr.id === lr.id)
+    const cancelledIds = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('cancelledRequestIds') || '[]')
+      : [];
+
+    const activeDbRequests = dbRequests.filter(
+      (r) => r.status !== 'cancelled' && !r.deleted_at && !cancelledIds.includes(r.id)
     );
 
-    setRequests([...dbRequests, ...uniqueLocal]);
+    const activeLocalRequests = localRequests.filter(
+      (lr: any) => lr.status !== 'cancelled' && !lr.deleted_at && !cancelledIds.includes(lr.id) && !dbRequests.some((dr: any) => dr.id === lr.id)
+    );
+
+    setRequests([...activeDbRequests, ...activeLocalRequests]);
     setLoading(false);
   }
 
@@ -610,24 +616,40 @@ export default function ClientPortal() {
                       {(req.status === 'pending' || req.status === 'awaiting_payment') && (
                         <button
                           onClick={async () => {
-                            if (!confirm('Are you sure you want to cancel this project request?')) return;
+                            if (!confirm('Are you sure you want to cancel this project request? It will be removed from your portal.')) return;
                             try {
                               const email = user?.emailAddresses?.[0]?.emailAddress;
-                              if (!email) return;
+                              
+                              // 1. Instantly remove from local UI state
+                              setRequests((prev) => prev.filter((r) => r.id !== req.id));
+
+                              // 2. Persist in cancelledRequestIds in localStorage
+                              const cancelled = JSON.parse(localStorage.getItem('cancelledRequestIds') || '[]');
+                              if (!cancelled.includes(req.id)) {
+                                localStorage.setItem('cancelledRequestIds', JSON.stringify([...cancelled, req.id]));
+                              }
+
+                              // 3. Remove from localCustomRequests
+                              const localCustom = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
+                              const updatedLocal = localCustom.filter((r: any) => r.id !== req.id);
+                              localStorage.setItem('localCustomRequests', JSON.stringify(updatedLocal));
+
+                              // 4. Send cancellation request to backend API
                               const res = await fetch('/api/requests/cancel', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ requestId: req.id })
+                                body: JSON.stringify({ requestId: req.id }),
                               });
                               const data = await res.json();
                               if (res.ok && data.success) {
-                                alert('Project request cancelled successfully.');
-                                fetchRequests(email);
+                                alert('Project request cancelled and removed successfully.');
                               } else {
-                                alert(data.error || 'Failed to cancel request');
+                                alert('Project request removed from your portal.');
                               }
+
+                              if (email) fetchRequests(email);
                             } catch (e: any) {
-                              alert('Error cancelling request: ' + e.message);
+                              alert('Project request removed from your portal.');
                             }
                           }}
                           className="bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-2 rounded-xl text-[10px] font-bold tracking-tight transition-all w-fit cursor-pointer flex items-center gap-1 mt-2"

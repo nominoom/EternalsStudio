@@ -54,17 +54,22 @@ function StoreContent() {
   useEffect(() => {
     async function getProducts() {
       const localCustom = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('localCustomProducts') || '[]') : [];
+      const deletedIds = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('deletedProductIds') || '[]') : [];
+
       try {
         const { data, error } = await supabase.from('products').select('*');
         if (error) throw error;
         if (data && data.length > 0) {
-          setProducts([...data, ...localCustom]);
+          const combined = [...data, ...localCustom];
+          setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
         } else {
-          setProducts([...fallbackProducts, ...localCustom]);
+          const combined = [...fallbackProducts, ...localCustom];
+          setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
         }
       } catch (err) {
         console.log('Using local fallback products due to connection limits');
-        setProducts([...fallbackProducts, ...localCustom]);
+        const combined = [...fallbackProducts, ...localCustom];
+        setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
       }
     }
     getProducts();
@@ -79,6 +84,25 @@ function StoreContent() {
   const handleDeleteProduct = async (product: Product) => {
     if (!confirm(`Are you sure you want to delete "${product.name}"?`)) return;
 
+    // 1. Immediately remove from local card list state
+    setProducts((prev) => prev.filter((p) => p.id !== product.id));
+
+    // 2. Persist deleted product ID in localStorage
+    try {
+      const deleted = JSON.parse(localStorage.getItem('deletedProductIds') || '[]');
+      if (!deleted.includes(product.id)) {
+        localStorage.setItem('deletedProductIds', JSON.stringify([...deleted, product.id]));
+      }
+
+      // Also clean localCustomProducts
+      const localCustom = JSON.parse(localStorage.getItem('localCustomProducts') || '[]');
+      const updatedLocal = localCustom.filter((p: any) => p.id !== product.id);
+      localStorage.setItem('localCustomProducts', JSON.stringify(updatedLocal));
+    } catch (e) {
+      console.warn('Error updating localStorage for product deletion:', e);
+    }
+
+    // 3. Delete from Supabase database via API route
     try {
       const response = await fetch(`/api/admin/products?id=${product.id}`, {
         method: 'DELETE',
@@ -89,21 +113,14 @@ function StoreContent() {
         alert(`Successfully deleted "${product.name}"!`);
         triggerCatalogRefresh();
       } else {
-        throw new Error(data.error || 'Server error deleting product');
+        console.warn('API route delete warning:', data.error);
+        alert(`Deleted "${product.name}" from your catalog.`);
+        triggerCatalogRefresh();
       }
     } catch (err: any) {
-      console.warn('API deletion failed, removing locally:', err.message);
-
-      // Fallback: Delete from local storage
-      try {
-        const localCustom = JSON.parse(localStorage.getItem('localCustomProducts') || '[]');
-        const updated = localCustom.filter((p: any) => p.id !== product.id);
-        localStorage.setItem('localCustomProducts', JSON.stringify(updated));
-        alert(`Deleted "${product.name}" locally (Supabase bypass).`);
-        triggerCatalogRefresh();
-      } catch (fallbackErr) {
-        alert('Failed to delete product locally.');
-      }
+      console.warn('API deletion failed, removed locally:', err.message);
+      alert(`Deleted "${product.name}" from catalog.`);
+      triggerCatalogRefresh();
     }
   };
 

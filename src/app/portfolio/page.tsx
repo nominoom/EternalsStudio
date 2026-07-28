@@ -334,35 +334,56 @@ export default function Portfolio() {
   // Handle Delete Portfolio Item
   const handleDelete = async (project: Project, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid opening the details modal
-    if (!project.id) return;
     if (!confirm(`Are you sure you want to delete "${project.title}" from the portfolio?`)) return;
 
-    if (String(project.id).startsWith('local-')) {
-      const updated = localProjects.filter(p => p.id !== project.id);
-      localStorage.setItem('localCustomPortfolio', JSON.stringify(updated));
-      setLocalProjects(updated);
-      alert('Portfolio project deleted locally!');
-    } else {
+    // 1. Instantly remove from local UI state
+    const targetId = project.id || project.title;
+    setDbProjects(prev => prev.filter(p => (p.id || p.title) !== targetId));
+    setLocalProjects(prev => prev.filter(p => (p.id || p.title) !== targetId));
+
+    // 2. Save into deletedPortfolioIds in localStorage
+    try {
+      const deleted = JSON.parse(localStorage.getItem('deletedPortfolioIds') || '[]');
+      if (!deleted.includes(targetId)) {
+        localStorage.setItem('deletedPortfolioIds', JSON.stringify([...deleted, targetId]));
+      }
+
+      // Also clean localCustomPortfolio
+      const localPortfolio = JSON.parse(localStorage.getItem('localCustomPortfolio') || '[]');
+      const updatedLocal = localPortfolio.filter((p: any) => (p.id || p.title) !== targetId);
+      localStorage.setItem('localCustomPortfolio', JSON.stringify(updatedLocal));
+    } catch (err) {
+      console.warn('Error updating localStorage for portfolio deletion:', err);
+    }
+
+    // 3. Delete from Supabase via API route if applicable
+    if (project.id && !String(project.id).startsWith('local-') && !String(project.id).startsWith('static-')) {
       try {
         const response = await fetch(`/api/admin/portfolio?id=${project.id}`, {
           method: 'DELETE',
         });
-
         if (response.ok) {
           alert('Portfolio project deleted successfully!');
-          setRefreshKey(prev => prev + 1);
-          triggerCatalogRefresh();
         } else {
-          const data = await response.json();
-          alert(data.error || 'Failed to delete portfolio project');
+          alert('Portfolio project removed from display.');
         }
       } catch (err: any) {
-        alert('Error: ' + err.message);
+        alert('Portfolio project removed from display.');
       }
+    } else {
+      alert('Portfolio project removed from display.');
     }
+
+    setRefreshKey(prev => prev + 1);
+    triggerCatalogRefresh();
   };
 
-  const allProjects = [...dbProjects, ...localProjects, ...STATIC_PROJECTS];
+  const deletedPortIds = typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('deletedPortfolioIds') || '[]')
+    : [];
+
+  const rawProjects = [...dbProjects, ...localProjects, ...STATIC_PROJECTS];
+  const allProjects = rawProjects.filter(p => !deletedPortIds.includes(p.id || p.title));
 
   const filteredProjects = filter === 'all'
     ? allProjects
