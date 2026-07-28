@@ -7,10 +7,16 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { firstName, lastName, email, company, subject, message } = await req.json();
+    const body = await req.json();
+    const firstName = body.firstName || body.first_name || (body.name || body.client_name ? (body.name || body.client_name).split(' ')[0] : '');
+    const lastName = body.lastName || body.last_name || (body.name || body.client_name ? (body.name || body.client_name).split(' ').slice(1).join(' ') || 'Client' : 'Client');
+    const email = body.email || body.clientEmail || body.client_email || '';
+    const company = body.company || body.organizationName || body.organization_name || '';
+    const subject = body.subject || body.title || 'New Inquiry';
+    const message = body.message || body.description || body.desc || subject;
 
-    if (!firstName || !lastName || !email || !message) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 }) as unknown as Response;
+    if (!email || !message) {
+      return NextResponse.json({ error: 'Missing required fields: email and message (or description)' }, { status: 400 }) as unknown as Response;
     }
 
     const fullName = `${firstName} ${lastName}`;

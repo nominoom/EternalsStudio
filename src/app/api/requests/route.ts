@@ -4,21 +4,22 @@ import { logEvent } from '../../../lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const { 
-      clientName, 
-      clientEmail, 
-      clientPhone, 
-      subject, 
-      description, 
-      fileUrl, 
-      scopeType = 'personal', 
-      organizationName = '', 
-      attachments = [],
-      payoutCutPercentage = 70.0
-    } = await req.json();
+    const body = await req.json();
+    
+    // Support camelCase, snake_case, and common field names
+    const clientName = body.clientName || body.client_name || body.name || '';
+    const clientEmail = body.clientEmail || body.client_email || body.email || '';
+    const clientPhone = body.clientPhone || body.client_phone || body.phone || '';
+    const subject = body.subject || body.title || 'Custom Project Spec';
+    const description = body.description || body.desc || body.notes || subject || 'Custom request submission';
+    const fileUrl = body.fileUrl || body.file_url || body.file || '';
+    const scopeType = body.scopeType || body.scope_type || 'personal';
+    const organizationName = body.organizationName || body.organization_name || body.org || '';
+    const attachments = body.attachments || [];
+    const payoutCutPercentage = body.payoutCutPercentage || body.payout_cut_percentage || 70.0;
 
-    if (!clientName || !clientEmail || !subject || !description) {
-      return NextResponse.json({ error: 'Missing required fields: clientName, clientEmail, subject, description' }, { status: 400 }) as unknown as Response;
+    if (!clientName || !clientEmail || !subject) {
+      return NextResponse.json({ error: 'Missing required fields: clientName (or client_name), clientEmail (or email), and subject' }, { status: 400 }) as unknown as Response;
     }
 
     let request;
