@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield, Edit3 } from 'lucide-react';
+import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAdmin } from '../context/AdminContext';
 import { useSiteContent } from '../context/SiteContentContext';
@@ -24,7 +24,7 @@ export default function Navbar() {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     const initialTheme = savedTheme || systemTheme;
-    
+
     setTheme(initialTheme);
     if (initialTheme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -38,7 +38,7 @@ export default function Navbar() {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
     localStorage.setItem('theme', nextTheme);
-    
+
     if (nextTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -88,11 +88,10 @@ export default function Navbar() {
                   <li key={link.path}>
                     <Link
                       href={link.path}
-                      className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${
-                        isActive
+                      className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${isActive
                           ? 'text-teal-500 dark:text-teal-400'
                           : 'text-slate-600 dark:text-slate-400'
-                      }`}
+                        }`}
                     >
                       {link.name}
                     </Link>
@@ -104,22 +103,6 @@ export default function Navbar() {
 
           {/* Action Controls */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Live Editor Mode Button */}
-            {hasAdminPrivileges && (
-              <button
-                onClick={useSiteContent().toggleEditMode}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-                  useSiteContent().isEditMode
-                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
-                    : 'bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white shadow-md shadow-teal-500/10'
-                }`}
-                title="Toggle Live Website Editor Mode"
-              >
-                <Edit3 size={14} />
-                <span className="hidden lg:inline">{useSiteContent().isEditMode ? 'Exit Editor' : 'Edit Mode'}</span>
-              </button>
-            )}
-
             {/* Admin Sidebar Toggle */}
             {hasAdminPrivileges && (
               <button
@@ -198,11 +181,10 @@ export default function Navbar() {
                   <Link
                     href={link.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`block text-base font-semibold transition-colors ${
-                      pathname === link.path
+                    className={`block text-base font-semibold transition-colors ${pathname === link.path
                         ? 'text-teal-500 dark:text-teal-400 font-bold'
                         : 'text-slate-700 dark:text-slate-300 hover:text-teal-500'
-                    }`}
+                      }`}
                   >
                     {link.name}
                   </Link>

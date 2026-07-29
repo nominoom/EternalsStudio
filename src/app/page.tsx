@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import EditableText from '../components/EditableText';
+import EditableImage from '../components/EditableImage';
 import { useSiteContent } from '../context/SiteContentContext';
-import { ArrowRight, Terminal, Palette, Box, Video } from 'lucide-react';
+import { ArrowRight, Terminal, Palette, Box, Video, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const { siteContent, updateSiteContent, updateStat } = useSiteContent();
@@ -102,6 +103,62 @@ export default function Home() {
                 />
               </Link>
             </div>
+
+            {/* Feature Banner Image (Editable) */}
+            <div className="w-full max-w-4xl mt-8">
+              <EditableImage
+                src={siteContent.hero.bannerImageUrl || ''}
+                alt="Hero Feature Showcase"
+                label="Hero Showcase Banner"
+                placeholderText="Click to set a Hero Showcase Banner Image"
+                onChange={(url) => updateSiteContent({ hero: { ...siteContent.hero, bannerImageUrl: url } })}
+                className="w-full max-h-96 object-cover rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-2xl"
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Promo Banners Showcase */}
+        {siteContent.promoBanners && siteContent.promoBanners.filter(b => b.enabled !== false).length > 0 && (
+          <section className="mx-auto max-w-7xl relative z-10 py-8 space-y-6">
+            {siteContent.promoBanners.filter(b => b.enabled !== false).map((banner) => (
+              <div
+                key={banner.id}
+                className={`p-8 sm:p-12 rounded-3xl bg-gradient-to-r ${banner.bgGradient || 'from-teal-500/10 via-indigo-500/10 to-purple-500/10'} border border-teal-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8`}
+              >
+                <div className="space-y-4 max-w-xl text-left">
+                  {banner.badge && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-teal-500/20 text-teal-400 border border-teal-500/30">
+                      <Sparkles size={12} />
+                      {banner.badge}
+                    </span>
+                  )}
+                  <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50">
+                    {banner.title}
+                  </h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {banner.subtitle}
+                  </p>
+                  {banner.buttonText && (
+                    <div>
+                      <Link
+                        href={banner.buttonLink || '/contact'}
+                        className="inline-flex items-center gap-2 px-6 py-3 text-xs font-extrabold text-white bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 rounded-xl shadow-md transition-all active:scale-95"
+                      >
+                        <span>{banner.buttonText}</span>
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {banner.imageUrl && (
+                  <div className="w-full md:w-80 h-48 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-slate-800/50 flex-shrink-0">
+                    <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+            ))}
           </section>
         )}
 

@@ -8,12 +8,25 @@ export interface TeamMember {
   role: string;
   initial: string;
   color: string;
+  avatarUrl?: string;
 }
 
 export interface StatItem {
   id: string;
   value: string;
   label: string;
+}
+
+export interface PromoBanner {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge?: string;
+  imageUrl: string;
+  bgGradient: string;
+  buttonText: string;
+  buttonLink: string;
+  enabled: boolean;
 }
 
 export interface SiteContent {
@@ -23,6 +36,8 @@ export interface SiteContent {
     announcementBarText: string;
     announcementBarLink: string;
     showAnnouncementBar: boolean;
+    heroImageUrl?: string;
+    aboutHeaderImageUrl?: string;
   };
   hero: {
     badgeText: string;
@@ -34,9 +49,11 @@ export interface SiteContent {
     secondaryCtaText: string;
     secondaryCtaLink: string;
     showHero: boolean;
+    bannerImageUrl?: string;
   };
   stats: StatItem[];
   team: TeamMember[];
+  promoBanners: PromoBanner[];
   sections: {
     showStoreGrid: boolean;
     showPortfolioShowcase: boolean;
@@ -109,6 +126,19 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     { id: 'tm-5', name: 'Qzlf', role: 'Graphic Designer & Concept Illustrator', initial: 'Q', color: 'bg-emerald-500' },
     { id: 'tm-6', name: 'Curtain', role: 'Community Manager & Support Lead', initial: 'C', color: 'bg-rose-500' }
   ],
+  promoBanners: [
+    {
+      id: 'pb-1',
+      title: 'Custom Brand & Vector Overlays',
+      subtitle: 'Elevate your esports channel or corporate website with tailor-made motion graphics.',
+      badge: 'Featured Showcase',
+      imageUrl: '',
+      bgGradient: 'from-cyan-500/20 via-teal-500/20 to-indigo-500/20',
+      buttonText: 'Explore Portfolio',
+      buttonLink: '/portfolio',
+      enabled: true
+    }
+  ],
   sections: {
     showStoreGrid: true,
     showPortfolioShowcase: true,
@@ -160,12 +190,16 @@ export interface SiteContentContextType {
   setIsEditMode: (val: boolean) => void;
   toggleEditMode: () => void;
   cancelEditMode: () => void;
+  // Helper methods for Team & Stats & Banners
   addTeamMember: (member: Omit<TeamMember, 'id'>) => void;
-  updateTeamMember: (id: string, updated: Partial<TeamMember>) => void;
+  updateTeamMember: (id: string, member: Partial<TeamMember>) => void;
   deleteTeamMember: (id: string) => void;
   addStat: (stat: Omit<StatItem, 'id'>) => void;
-  updateStat: (id: string, updated: Partial<StatItem>) => void;
+  updateStat: (id: string, stat: Partial<StatItem>) => void;
   deleteStat: (id: string) => void;
+  addPromoBanner: (banner: Omit<PromoBanner, 'id'>) => void;
+  updatePromoBanner: (id: string, updated: Partial<PromoBanner>) => void;
+  deletePromoBanner: (id: string) => void;
 }
 
 const SiteContentContext = createContext<SiteContentContextType | undefined>(undefined);
@@ -316,6 +350,32 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     }));
   };
 
+  // Helper CRUD methods for Promo Banners
+  const addPromoBanner = (banner: Omit<PromoBanner, 'id'>) => {
+    const newBanner: PromoBanner = {
+      ...banner,
+      id: `pb-${Date.now()}`
+    };
+    setSiteContent((prev) => ({
+      ...prev,
+      promoBanners: [...(prev.promoBanners || []), newBanner]
+    }));
+  };
+
+  const updatePromoBanner = (id: string, updated: Partial<PromoBanner>) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      promoBanners: (prev.promoBanners || []).map((b) => (b.id === id ? { ...b, ...updated } : b))
+    }));
+  };
+
+  const deletePromoBanner = (id: string) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      promoBanners: (prev.promoBanners || []).filter((b) => b.id !== id)
+    }));
+  };
+
   const hasUnsavedChanges = JSON.stringify(siteContent) !== JSON.stringify(initialContent);
 
   return (
@@ -337,7 +397,10 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         deleteTeamMember,
         addStat,
         updateStat,
-        deleteStat
+        deleteStat,
+        addPromoBanner,
+        updatePromoBanner,
+        deletePromoBanner
       }}
     >
       {children}

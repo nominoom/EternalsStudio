@@ -2,52 +2,69 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useSiteContent, TeamMember, StatItem } from '../context/SiteContentContext';
-import { 
-  Users, 
-  BarChart3, 
-  FileText, 
-  Layers, 
-  Save, 
-  RotateCcw, 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  Check, 
-  Loader2, 
-  CheckCircle2, 
-  Megaphone, 
-  Layout, 
-  Globe, 
-  Mail, 
-  Phone, 
+import { useSiteContent, TeamMember, StatItem, PromoBanner } from '../context/SiteContentContext';
+import EditableImage from './EditableImage';
+import {
+  Users,
+  BarChart3,
+  FileText,
+  Layers,
+  Save,
+  RotateCcw,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  Loader2,
+  CheckCircle2,
+  Megaphone,
+  Layout,
+  Globe,
+  Mail,
+  Phone,
   MessageSquare,
   Sparkles,
   ShoppingBag,
-  Briefcase
+  Briefcase,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export default function SiteBuilderTab() {
-  const { 
-    siteContent, 
-    updateSiteContent, 
-    saveSiteContent, 
-    resetToDefault, 
-    isSaving, 
+  const {
+    siteContent,
+    updateSiteContent,
+    saveSiteContent,
+    resetToDefault,
+    isSaving,
     hasUnsavedChanges,
-    isEditMode,
-    toggleEditMode,
     addTeamMember,
     updateTeamMember,
     deleteTeamMember,
     addStat,
     updateStat,
-    deleteStat
+    deleteStat,
+    addPromoBanner,
+    updatePromoBanner,
+    deletePromoBanner
   } = useSiteContent();
 
-  const [activeSubTab, setActiveSubTab] = useState<'team' | 'stats' | 'copy' | 'sections' | 'contact'>('team');
+  const [activeSubTab, setActiveSubTab] = useState<'team' | 'stats' | 'banners' | 'copy' | 'sections' | 'contact'>('team');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Banner Add/Edit State
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<PromoBanner | null>(null);
+  const [bannerForm, setBannerForm] = useState({
+    title: '',
+    subtitle: '',
+    badge: 'Featured',
+    imageUrl: '',
+    bgGradient: 'from-cyan-500/20 via-teal-500/20 to-indigo-500/20',
+    buttonText: 'Learn More',
+    buttonLink: '/contact',
+    enabled: true
+  });
 
   // Team Member Add/Edit Modal State
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -130,6 +147,48 @@ export default function SiteBuilderTab() {
     setIsStatModalOpen(false);
   };
 
+  // Open Banner Modal for Add or Edit
+  const openBannerModal = (banner?: PromoBanner) => {
+    if (banner) {
+      setEditingBanner(banner);
+      setBannerForm({
+        title: banner.title,
+        subtitle: banner.subtitle,
+        badge: banner.badge || 'Featured',
+        imageUrl: banner.imageUrl || '',
+        bgGradient: banner.bgGradient || 'from-cyan-500/20 via-teal-500/20 to-indigo-500/20',
+        buttonText: banner.buttonText || 'Learn More',
+        buttonLink: banner.buttonLink || '/contact',
+        enabled: banner.enabled !== false
+      });
+    } else {
+      setEditingBanner(null);
+      setBannerForm({
+        title: '',
+        subtitle: '',
+        badge: 'Featured',
+        imageUrl: '',
+        bgGradient: 'from-cyan-500/20 via-teal-500/20 to-indigo-500/20',
+        buttonText: 'Learn More',
+        buttonLink: '/contact',
+        enabled: true
+      });
+    }
+    setIsBannerModalOpen(true);
+  };
+
+  const handleSaveBanner = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bannerForm.title) return;
+
+    if (editingBanner) {
+      updatePromoBanner(editingBanner.id, bannerForm);
+    } else {
+      addPromoBanner(bannerForm);
+    }
+    setIsBannerModalOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header Bar */}
@@ -153,21 +212,10 @@ export default function SiteBuilderTab() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
-          <Link
-            href="/"
-            onClick={() => {
-              if (!isEditMode) toggleEditMode();
-            }}
-            className="px-4 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 rounded-xl shadow-lg shadow-teal-500/20 border border-teal-400/30 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>✏️ Live On-Site Editor Mode</span>
-          </Link>
-
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           <button
             onClick={resetToDefault}
-            className="px-3.5 py-2.5 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset Defaults
@@ -176,7 +224,7 @@ export default function SiteBuilderTab() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20 border border-emerald-400/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 rounded-xl shadow-lg shadow-teal-500/20 border border-teal-400/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isSaving ? (
               <>
@@ -209,8 +257,9 @@ export default function SiteBuilderTab() {
       {/* Sub-Tabs Bar */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         {[
-          { id: 'team', label: `👥 Team Members (${siteContent.team.length})`, icon: Users },
-          { id: 'stats', label: `📊 Stats & Metrics (${siteContent.stats.length})`, icon: BarChart3 },
+          { id: 'team', label: '👥 Team Members', icon: Users },
+          { id: 'stats', label: '📊 Stats & Data', icon: BarChart3 },
+          { id: 'banners', label: '🖼️ Banners & Images', icon: ImageIcon },
           { id: 'copy', label: '📝 Headlines & Text Copy', icon: FileText },
           { id: 'sections', label: '👁️ Page Section Toggles', icon: Layers },
           { id: 'contact', label: '📞 Contact & Social Channels', icon: MessageSquare },
@@ -220,11 +269,10 @@ export default function SiteBuilderTab() {
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-                isActive
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${isActive
                   ? 'bg-teal-500/15 text-teal-400 border-teal-500/40 shadow-sm'
                   : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800/80'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -259,8 +307,8 @@ export default function SiteBuilderTab() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {siteContent.team.map((member) => (
-              <div 
-                key={member.id} 
+              <div
+                key={member.id}
                 className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-all"
               >
                 <div className="flex items-center gap-3">
@@ -345,10 +393,118 @@ export default function SiteBuilderTab() {
         </div>
       )}
 
-      {/* 3. HEADLINES & TEXT COPY CMS */}
+      {/* 3. BANNERS & MEDIA MANAGER */}
+      {activeSubTab === 'banners' && (
+        <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-6 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-cyan-400" />
+                Banners & Media Manager
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Upload and manage promo banners, hero background graphics, and showcase cards across the website.
+              </p>
+            </div>
+
+            <button
+              onClick={() => openBannerModal()}
+              className="px-4 py-2 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Custom Promo Banner</span>
+            </button>
+          </div>
+
+          {/* Quick Header & Hero Image Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-teal-400 uppercase tracking-wider block">Home Hero Feature Banner Image</label>
+              <EditableImage
+                src={siteContent.hero.bannerImageUrl || ''}
+                alt="Hero Feature Banner"
+                label="Hero Banner Image"
+                placeholderText="Upload or set a feature image for the homepage Hero"
+                onChange={(url) => updateSiteContent({ hero: { ...siteContent.hero, bannerImageUrl: url } })}
+                className="w-full h-40 object-cover rounded-xl border border-slate-800"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider block">About Page Header Image</label>
+              <EditableImage
+                src={siteContent.branding.aboutHeaderImageUrl || ''}
+                alt="About Header Banner"
+                label="About Header Image"
+                placeholderText="Upload or set a header background image for About Us"
+                onChange={(url) => updateSiteContent({ branding: { ...siteContent.branding, aboutHeaderImageUrl: url } })}
+                className="w-full h-40 object-cover rounded-xl border border-slate-800"
+              />
+            </div>
+          </div>
+
+          {/* Promo Banners Roster */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Promotional Banners & Showcase Cards</h4>
+
+            {(!siteContent.promoBanners || siteContent.promoBanners.length === 0) ? (
+              <p className="text-xs text-slate-500 italic py-4">No promo banners added yet. Click "Add Custom Promo Banner" above.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {siteContent.promoBanners.map((banner) => (
+                  <div
+                    key={banner.id}
+                    className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col gap-3 group hover:border-slate-700 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${banner.enabled !== false ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                        <span className="text-xs font-bold text-teal-400">{banner.badge || 'Promo'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openBannerModal(banner)}
+                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deletePromoBanner(banner.id)}
+                          className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {banner.imageUrl && (
+                      <div className="h-28 w-full rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                        <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{banner.title}</h4>
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{banner.subtitle}</p>
+                    </div>
+
+                    {banner.buttonText && (
+                      <div className="text-[11px] text-teal-400 font-semibold">
+                        CTA Button: "{banner.buttonText}" &rarr; {banner.buttonLink}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 4. MAIN PAGE HEADLINES & STORY CONTENT */}
       {activeSubTab === 'copy' && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-6 shadow-xl">
-          <div>
+          <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-purple-400" />
               Main Page Headlines & Story Content
@@ -448,8 +604,8 @@ export default function SiteBuilderTab() {
               { key: 'showAnnouncementBar', label: 'Top Notification Bar', desc: 'Announcement bar across top of Navbar', icon: Megaphone, obj: 'branding' },
             ].map((item) => {
               const Icon = item.icon;
-              const isChecked = item.obj === 'hero' 
-                ? siteContent.hero.showHero 
+              const isChecked = item.obj === 'hero'
+                ? siteContent.hero.showHero
                 : item.obj === 'branding'
                   ? siteContent.branding.showAnnouncementBar
                   : (siteContent.sections as any)[item.key];
@@ -584,9 +740,8 @@ export default function SiteBuilderTab() {
                       key={c.class}
                       type="button"
                       onClick={() => setTeamForm({ ...teamForm, color: c.class })}
-                      className={`w-7 h-7 rounded-lg ${c.class} transition-all cursor-pointer ${
-                        teamForm.color === c.class ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
-                      }`}
+                      className={`w-7 h-7 rounded-lg ${c.class} transition-all cursor-pointer ${teamForm.color === c.class ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                        }`}
                       title={c.label}
                     />
                   ))}
@@ -660,6 +815,106 @@ export default function SiteBuilderTab() {
                 >
                   {editingStat ? 'Save Changes' : 'Add Metric'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM PROMO BANNER MODAL */}
+      {isBannerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-white">
+              {editingBanner ? 'Edit Promo Banner' : 'Add Custom Promo Banner'}
+            </h3>
+
+            <form onSubmit={handleSaveBanner} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-400 block mb-1">Banner Title Headline</label>
+                <input
+                  type="text"
+                  required
+                  value={bannerForm.title}
+                  onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                  placeholder="Flash Sale or Custom Design Showcase"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 block mb-1">Subtitle Description</label>
+                <textarea
+                  rows={2}
+                  value={bannerForm.subtitle}
+                  onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                  placeholder="Brief promo or announcement details..."
+                  className="w-full px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-1">Badge Tag</label>
+                  <input
+                    type="text"
+                    value={bannerForm.badge}
+                    onChange={(e) => setBannerForm({ ...bannerForm, badge: e.target.value })}
+                    placeholder="Featured Showcase"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-400 block mb-1">Button Link</label>
+                  <input
+                    type="text"
+                    value={bannerForm.buttonLink}
+                    onChange={(e) => setBannerForm({ ...bannerForm, buttonLink: e.target.value })}
+                    placeholder="/contact or /store"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 block mb-1">Banner Image</label>
+                <EditableImage
+                  src={bannerForm.imageUrl}
+                  alt={bannerForm.title}
+                  label="Promo Banner Image"
+                  placeholderText="Upload or set a web URL for the promo banner"
+                  onChange={(url) => setBannerForm({ ...bannerForm, imageUrl: url })}
+                  className="w-full h-32 object-cover rounded-xl border border-slate-800"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bannerForm.enabled}
+                    onChange={(e) => setBannerForm({ ...bannerForm, enabled: e.target.checked })}
+                    className="rounded border-slate-800 text-teal-500 focus:ring-teal-500"
+                  />
+                  <span>Show Promo Banner Live</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBannerModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-xl shadow-md cursor-pointer"
+                  >
+                    {editingBanner ? 'Save Changes' : 'Add Banner'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

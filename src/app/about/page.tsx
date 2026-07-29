@@ -4,6 +4,7 @@ import React from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import EditableText from '../../components/EditableText';
+import EditableImage from '../../components/EditableImage';
 import { useSiteContent } from '../../context/SiteContentContext';
 import { Target, Eye, Gem, Users, Award, ShieldAlert } from 'lucide-react';
 
@@ -28,6 +29,13 @@ export default function About() {
         {/* Banner Section */}
         <section className="mx-auto max-w-7xl relative z-10 mb-16">
           <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-teal-400/90 to-indigo-600/90 p-12 sm:p-20 text-white text-center shadow-xl shadow-teal-500/10">
+            {siteContent.branding.aboutHeaderImageUrl && (
+              <img
+                src={siteContent.branding.aboutHeaderImageUrl}
+                alt="About Header Banner"
+                className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 pointer-events-none"
+              />
+            )}
             <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
             <div className="relative z-10 flex flex-col items-center gap-4">
               <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-2">
@@ -154,13 +162,23 @@ export default function About() {
                   key={member.id}
                   className="group bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 hover:border-teal-500/40 backdrop-blur-md rounded-2xl p-6 flex flex-col items-center text-center gap-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className={`h-20 w-20 rounded-full ${member.color} text-white font-extrabold text-3xl flex items-center justify-center shadow-md shadow-slate-500/10 transition-transform duration-300 group-hover:scale-110`}>
-                    <EditableText
-                      value={member.initial}
-                      label="Team Member Initial"
-                      onChange={(val) => updateTeamMember(member.id, { initial: val })}
+                  {member.avatarUrl ? (
+                    <EditableImage
+                      src={member.avatarUrl}
+                      alt={member.name}
+                      label={`${member.name} Avatar`}
+                      onChange={(url) => updateTeamMember(member.id, { avatarUrl: url })}
+                      className="h-20 w-20 rounded-full object-cover shadow-md transition-transform duration-300 group-hover:scale-110"
                     />
-                  </div>
+                  ) : (
+                    <div className={`h-20 w-20 rounded-full ${member.color} text-white font-extrabold text-3xl flex items-center justify-center shadow-md shadow-slate-500/10 transition-transform duration-300 group-hover:scale-110`}>
+                      <EditableText
+                        value={member.initial}
+                        label="Team Member Initial"
+                        onChange={(val) => updateTeamMember(member.id, { initial: val })}
+                      />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-1">
                     <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors">
                       <EditableText

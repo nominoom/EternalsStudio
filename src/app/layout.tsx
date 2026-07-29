@@ -6,7 +6,6 @@ import { AdminProvider } from "../context/AdminContext";
 import { SiteContentProvider } from "../context/SiteContentContext";
 import CartDrawer from "../components/CartDrawer";
 import AdminSidebar from "../components/AdminSidebar";
-import LiveEditorBar from "../components/LiveEditorBar";
 import BubbleBackground from "../components/BubbleBackground";
 import "./globals.css";
 
@@ -37,7 +36,6 @@ export default function RootLayout({
           <SiteContentProvider>
             <AdminProvider>
               <CartProvider>
-                <LiveEditorBar />
                 <BubbleBackground />
                 {children}
                 <CartDrawer />
