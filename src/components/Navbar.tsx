@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield } from 'lucide-react';
+import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield, Edit3 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAdmin } from '../context/AdminContext';
 import { useSiteContent } from '../context/SiteContentContext';
@@ -104,6 +104,22 @@ export default function Navbar() {
 
           {/* Action Controls */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Live Editor Mode Button */}
+            {hasAdminPrivileges && (
+              <button
+                onClick={useSiteContent().toggleEditMode}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                  useSiteContent().isEditMode
+                    ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40'
+                    : 'bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white shadow-md shadow-teal-500/10'
+                }`}
+                title="Toggle Live Website Editor Mode"
+              >
+                <Edit3 size={14} />
+                <span className="hidden lg:inline">{useSiteContent().isEditMode ? 'Exit Editor' : 'Edit Mode'}</span>
+              </button>
+            )}
+
             {/* Admin Sidebar Toggle */}
             {hasAdminPrivileges && (
               <button

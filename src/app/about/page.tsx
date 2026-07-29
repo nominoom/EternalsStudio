@@ -3,11 +3,12 @@
 import React from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import EditableText from '../../components/EditableText';
 import { useSiteContent } from '../../context/SiteContentContext';
 import { Target, Eye, Gem, Users, Award, ShieldAlert } from 'lucide-react';
 
 export default function About() {
-  const { siteContent } = useSiteContent();
+  const { siteContent, updateSiteContent, updateTeamMember } = useSiteContent();
 
   const expertise = [
     { name: 'Custom React Development', desc: 'Performance-optimized, interactive frontend apps.' },
@@ -33,10 +34,19 @@ export default function About() {
                 ◆
               </div>
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-                {siteContent.aboutPage.headerTitle}
+                <EditableText
+                  value={siteContent.aboutPage.headerTitle}
+                  label="About Header Title"
+                  onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, headerTitle: val } })}
+                />
               </h1>
               <p className="text-sm sm:text-lg text-teal-50/90 max-w-xl font-medium leading-relaxed">
-                {siteContent.aboutPage.headerSubtitle}
+                <EditableText
+                  value={siteContent.aboutPage.headerSubtitle}
+                  label="About Header Subtitle"
+                  multiline
+                  onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, headerSubtitle: val } })}
+                />
               </p>
             </div>
           </div>
@@ -46,18 +56,36 @@ export default function About() {
         <section className="mx-auto max-w-7xl relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24">
           <div className="flex flex-col gap-6">
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-              {siteContent.aboutPage.storyTitle || 'Our Mission'}
+              <EditableText
+                value={siteContent.aboutPage.storyTitle || 'Our Mission'}
+                label="Mission Section Title"
+                onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, storyTitle: val } })}
+              />
             </h2>
-            <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400 whitespace-pre-line">
-              {siteContent.aboutPage.storyContent}
-            </p>
+            <div className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              <EditableText
+                value={siteContent.aboutPage.storyContent}
+                label="Mission Story Content"
+                multiline
+                onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, storyContent: val } })}
+              />
+            </div>
             {siteContent.aboutPage.visionContent && (
               <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-                  {siteContent.aboutPage.visionTitle || 'Our Core Vision'}
+                  <EditableText
+                    value={siteContent.aboutPage.visionTitle || 'Our Core Vision'}
+                    label="Core Vision Title"
+                    onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, visionTitle: val } })}
+                  />
                 </h3>
                 <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                  {siteContent.aboutPage.visionContent}
+                  <EditableText
+                    value={siteContent.aboutPage.visionContent}
+                    label="Core Vision Description"
+                    multiline
+                    onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, visionContent: val } })}
+                  />
                 </p>
               </div>
             )}
@@ -66,10 +94,18 @@ export default function About() {
             {/* Mission Illustration (Vector monograms logo text) */}
             <div className="text-center flex flex-col gap-4 font-black">
               <span className="text-5xl sm:text-7xl bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent tracking-widest font-extrabold uppercase">
-                {siteContent.branding.siteName}
+                <EditableText
+                  value={siteContent.branding.siteName}
+                  label="Studio Brand Name"
+                  onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, siteName: val } })}
+                />
               </span>
               <span className="text-sm uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500 font-bold">
-                {siteContent.branding.logoSubtitle}
+                <EditableText
+                  value={siteContent.branding.logoSubtitle}
+                  label="Studio Logo Subtitle"
+                  onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, logoSubtitle: val } })}
+                />
               </span>
             </div>
           </div>
@@ -119,14 +155,26 @@ export default function About() {
                   className="group bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 hover:border-teal-500/40 backdrop-blur-md rounded-2xl p-6 flex flex-col items-center text-center gap-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className={`h-20 w-20 rounded-full ${member.color} text-white font-extrabold text-3xl flex items-center justify-center shadow-md shadow-slate-500/10 transition-transform duration-300 group-hover:scale-110`}>
-                    {member.initial}
+                    <EditableText
+                      value={member.initial}
+                      label="Team Member Initial"
+                      onChange={(val) => updateTeamMember(member.id, { initial: val })}
+                    />
                   </div>
                   <div className="flex flex-col gap-1">
                     <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors">
-                      {member.name}
+                      <EditableText
+                        value={member.name}
+                        label="Team Member Name"
+                        onChange={(val) => updateTeamMember(member.id, { name: val })}
+                      />
                     </h3>
                     <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                      {member.role}
+                      <EditableText
+                        value={member.role}
+                        label="Team Member Role"
+                        onChange={(val) => updateTeamMember(member.id, { role: val })}
+                      />
                     </span>
                   </div>
                 </div>

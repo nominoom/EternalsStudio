@@ -148,7 +148,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   }
 };
 
-interface SiteContentContextType {
+export interface SiteContentContextType {
   siteContent: SiteContent;
   updateSiteContent: (newContent: Partial<SiteContent> | ((prev: SiteContent) => SiteContent)) => void;
   saveSiteContent: () => Promise<boolean>;
@@ -156,12 +156,15 @@ interface SiteContentContextType {
   isLoading: boolean;
   isSaving: boolean;
   hasUnsavedChanges: boolean;
-  // Helper methods for Team & Stats
+  isEditMode: boolean;
+  setIsEditMode: (val: boolean) => void;
+  toggleEditMode: () => void;
+  cancelEditMode: () => void;
   addTeamMember: (member: Omit<TeamMember, 'id'>) => void;
-  updateTeamMember: (id: string, member: Partial<TeamMember>) => void;
+  updateTeamMember: (id: string, updated: Partial<TeamMember>) => void;
   deleteTeamMember: (id: string) => void;
   addStat: (stat: Omit<StatItem, 'id'>) => void;
-  updateStat: (id: string, stat: Partial<StatItem>) => void;
+  updateStat: (id: string, updated: Partial<StatItem>) => void;
   deleteStat: (id: string) => void;
 }
 
@@ -174,6 +177,16 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
   const [initialContent, setInitialContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  const toggleEditMode = () => {
+    setIsEditMode((prev) => !prev);
+  };
+
+  const cancelEditMode = () => {
+    setSiteContent(initialContent);
+    setIsEditMode(false);
+  };
 
   useEffect(() => {
     async function loadContent() {
@@ -315,6 +328,10 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         isLoading,
         isSaving,
         hasUnsavedChanges,
+        isEditMode,
+        setIsEditMode,
+        toggleEditMode,
+        cancelEditMode,
         addTeamMember,
         updateTeamMember,
         deleteTeamMember,

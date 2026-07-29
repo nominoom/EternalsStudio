@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useSiteContent, TeamMember, StatItem } from '../context/SiteContentContext';
 import { 
   Users, 
@@ -34,6 +35,8 @@ export default function SiteBuilderTab() {
     resetToDefault, 
     isSaving, 
     hasUnsavedChanges,
+    isEditMode,
+    toggleEditMode,
     addTeamMember,
     updateTeamMember,
     deleteTeamMember,
@@ -150,10 +153,21 @@ export default function SiteBuilderTab() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+          <Link
+            href="/"
+            onClick={() => {
+              if (!isEditMode) toggleEditMode();
+            }}
+            className="px-4 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 rounded-xl shadow-lg shadow-teal-500/20 border border-teal-400/30 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>✏️ Live On-Site Editor Mode</span>
+          </Link>
+
           <button
             onClick={resetToDefault}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Reset Defaults
@@ -162,7 +176,7 @@ export default function SiteBuilderTab() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-5 py-2.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 rounded-xl shadow-lg shadow-teal-500/20 border border-teal-400/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20 border border-emerald-400/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isSaving ? (
               <>
