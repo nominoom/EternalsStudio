@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { useSiteConfig } from '../../context/SiteConfigContext';
+import { useSiteContent } from '../../context/SiteContentContext';
 import { Mail, Phone, Share2, Shield, Send, CheckCircle2, FileText, Briefcase } from 'lucide-react';
 
 export default function Contact() {
-  const { siteConfig } = useSiteConfig();
+  const { siteContent } = useSiteContent();
   const [formType, setFormType] = useState<'inquiry' | 'request'>('inquiry');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -311,8 +311,8 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Support</span>
-                <a href={`mailto:${siteConfig.contactPage.email}`} className="font-extrabold text-sm hover:text-teal-500 transition-colors">
-                  {siteConfig.contactPage.email}
+                <a href={`mailto:${siteContent.contactPage.email}`} className="font-extrabold text-sm hover:text-teal-500 transition-colors">
+                  {siteContent.contactPage.email}
                 </a>
               </div>
             </div>
@@ -324,8 +324,8 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Connect Directly</span>
-                <a href={`tel:${siteConfig.contactPage.phone}`} className="font-extrabold text-sm hover:text-indigo-500 transition-colors">
-                  {siteConfig.contactPage.phone}
+                <a href={`tel:${siteContent.contactPage.phone}`} className="font-extrabold text-sm hover:text-indigo-500 transition-colors">
+                  {siteContent.contactPage.phone}
                 </a>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Studio Community</span>
-                <a href={siteConfig.contactPage.discordUrl} target="_blank" rel="noreferrer" className="font-extrabold text-sm text-blue-400 hover:underline">
+                <a href={siteContent.contactPage.discordUrl} target="_blank" rel="noreferrer" className="font-extrabold text-sm text-blue-400 hover:underline">
                   Join Discord Community &rarr;
                 </a>
               </div>
@@ -350,7 +350,7 @@ export default function Contact() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Typical Response Time</span>
-                <span className="font-extrabold text-sm">{siteConfig.contactPage.responseTimeText || '24 ~ 48 Hours Guaranteed'}</span>
+                <span className="font-extrabold text-sm">{siteContent.contactPage.responseTimeText || '24 ~ 48 Hours Guaranteed'}</span>
               </div>
             </div>
           </div>

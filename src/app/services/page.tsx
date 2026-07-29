@@ -4,11 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { useSiteConfig } from '../../context/SiteConfigContext';
+import { useSiteContent } from '../../context/SiteContentContext';
 import { ArrowRight, Laptop, Shield, MessageSquare, Award, Zap, Smile, Globe, ShoppingBag } from 'lucide-react';
 
 export default function Services() {
-  const { siteConfig } = useSiteConfig();
+  const { siteContent } = useSiteContent();
 
   const processSteps = [
     { num: '01', name: 'Discovery', desc: 'Understanding your vision, business goals, and defining specific project scope requirements.' },
@@ -36,10 +36,10 @@ export default function Services() {
         {/* Header */}
         <section className="mx-auto max-w-7xl relative z-10 text-center flex flex-col items-center gap-4 py-8 mb-16">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-            {siteConfig.servicesPage.headerTitle || 'Our Services'}
+            {siteContent.servicesPage.headerTitle || 'Our Services'}
           </h1>
           <p className="text-lg font-medium text-slate-500 dark:text-slate-400 max-w-xl">
-            {siteConfig.servicesPage.headerSubtitle || 'Custom development and creative design solutions tailored to match your specific workflow.'}
+            {siteContent.servicesPage.headerSubtitle || 'Custom development and creative design solutions tailored to match your specific workflow.'}
           </p>
         </section>
 

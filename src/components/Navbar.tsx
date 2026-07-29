@@ -142,7 +142,7 @@ export default function Navbar() {
             {/* User Auth Buttons */}
             {isSignedIn ? (
               <div className="flex items-center gap-2">
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-3">
