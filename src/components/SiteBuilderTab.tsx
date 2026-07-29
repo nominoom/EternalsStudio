@@ -69,7 +69,7 @@ export default function SiteBuilderTab() {
   // Team Member Add/Edit Modal State
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
-  const [teamForm, setTeamForm] = useState({ name: '', role: '', initial: '', color: 'bg-teal-500' });
+  const [teamForm, setTeamForm] = useState({ name: '', role: '', initial: '', color: 'bg-teal-500', avatarUrl: '' });
 
   // Stat Add/Edit State
   const [isStatModalOpen, setIsStatModalOpen] = useState(false);
@@ -102,10 +102,10 @@ export default function SiteBuilderTab() {
   const openTeamModal = (member?: TeamMember) => {
     if (member) {
       setEditingTeamMember(member);
-      setTeamForm({ name: member.name, role: member.role, initial: member.initial, color: member.color });
+      setTeamForm({ name: member.name, role: member.role, initial: member.initial, color: member.color, avatarUrl: member.avatarUrl || '' });
     } else {
       setEditingTeamMember(null);
-      setTeamForm({ name: '', role: '', initial: '', color: 'bg-teal-500' });
+      setTeamForm({ name: '', role: '', initial: '', color: 'bg-teal-500', avatarUrl: '' });
     }
     setIsTeamModalOpen(true);
   };
@@ -312,9 +312,13 @@ export default function SiteBuilderTab() {
                 className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${member.color} text-white font-bold text-base flex items-center justify-center shadow-md`}>
-                    {member.initial}
-                  </div>
+                  {member.avatarUrl ? (
+                    <img src={member.avatarUrl} alt={member.name} className="w-10 h-10 rounded-xl object-cover border border-slate-800 shadow-md" />
+                  ) : (
+                    <div className={`w-10 h-10 rounded-xl ${member.color} text-white font-bold text-base flex items-center justify-center shadow-md`}>
+                      {member.initial}
+                    </div>
+                  )}
                   <div>
                     <h4 className="text-sm font-bold text-white leading-tight">{member.name}</h4>
                     <p className="text-xs text-slate-400 mt-0.5">{member.role}</p>
@@ -746,6 +750,18 @@ export default function SiteBuilderTab() {
                     />
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400 block mb-1">Avatar Photo / Logo Image (Optional)</label>
+                <EditableImage
+                  src={teamForm.avatarUrl}
+                  alt={teamForm.name || 'Member Avatar'}
+                  label="Team Member Avatar Logo"
+                  placeholderText="Upload or set a photo/logo URL for this team member"
+                  onChange={(url) => setTeamForm({ ...teamForm, avatarUrl: url })}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-teal-500/50 shadow-md"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3">
