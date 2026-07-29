@@ -79,226 +79,159 @@ export default function Navbar() {
             <span>{siteContent.branding.siteName}</span>
           </Link>
 
-        {/* Navigation Links (Desktop) */}
-        <nav className="hidden md:block">
-          <ul className="flex items-center gap-8">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.path;
-              return (
-                <li key={link.path}>
-                  <Link
-                    href={link.path}
-                    className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${
-                      isActive
-                        ? 'text-teal-500 dark:text-teal-400'
-                        : 'text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+          {/* Navigation Links (Desktop) */}
+          <nav className="hidden md:block">
+            <ul className="flex items-center gap-8">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.path;
+                return (
+                  <li key={link.path}>
+                    <Link
+                      href={link.path}
+                      className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${
+                        isActive
+                          ? 'text-teal-500 dark:text-teal-400'
+                          : 'text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Admin Sidebar Toggle */}
-          {hasAdminPrivileges && (
-            <button
-              onClick={toggleAdminSidebar}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/5 text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200 cursor-pointer"
-              aria-label="Admin settings"
-              title="Open Admin Console"
-            >
-              <Shield size={18} />
-            </button>
-          )}
-
-          {/* Theme Toggler */}
-          <button
-            onClick={toggleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 cursor-pointer"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
-
-          {/* Cart Button */}
-          <button
-            onClick={toggleCart}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 relative cursor-pointer"
-            aria-label="Cart"
-          >
-            <ShoppingCart size={18} />
-            {cart.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-[10px] font-black text-white shadow-sm shadow-teal-500/30">
-                {cart.length}
-              </span>
+          {/* Action Controls */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Admin Sidebar Toggle */}
+            {hasAdminPrivileges && (
+              <button
+                onClick={toggleAdminSidebar}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/5 text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200 cursor-pointer"
+                aria-label="Admin settings"
+                title="Open Admin Console"
+              >
+                <Shield size={18} />
+              </button>
             )}
-          </button>
 
-          {/* Clerk Auth Integrations */}
-          <div className="flex items-center gap-2 sm:gap-3 relative">
+            {/* Theme Toggler */}
+            <button
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 cursor-pointer"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+
+            {/* Cart Button */}
+            <button
+              onClick={toggleCart}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 relative cursor-pointer"
+              aria-label="Cart"
+            >
+              <ShoppingCart size={18} />
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-500 text-[10px] font-bold text-white shadow-sm">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+
+            {/* User Auth Buttons */}
             {isSignedIn ? (
-              <>
-                {/* Profile Avatar and Dropdown */}
-                <UserButton />
-                <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="ml-1 p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
-                  aria-label="Profile menu"
-                >
-                  {/* Simple chevron */}
-                  <svg
-                    className="w-4 h-4 fill-current text-gray-600 dark:text-gray-300"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M5.5 7l4.5 4.5L14.5 7" stroke="currentColor" strokeWidth="2" fill="none" />
-                  </svg>
-                </button>
-                {profileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200/60 dark:border-slate-800/60 z-20 py-1 overflow-hidden">
-                    <ul className="py-1">
-                      <li>
-                        <Link
-                          href="/client"
-                          onClick={() => setProfileMenuOpen(false)}
-                          className="block px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                        >
-                          Client Dashboard
-                        </Link>
-                      </li>
-                      {isTeamOrAdmin && (
-                        <li>
-                          <Link
-                            href="/team"
-                            onClick={() => setProfileMenuOpen(false)}
-                            className="block px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                          >
-                            Team Portal
-                          </Link>
-                        </li>
-                      )}
-                      {hasAdminPrivileges && (
-                        <li>
-                          <Link
-                            href="/admin"
-                            onClick={() => setProfileMenuOpen(false)}
-                            className="block px-4 py-2 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                          >
-                            Admin Panel
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </>
+              <div className="flex items-center gap-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
             ) : (
-              <>
+              <div className="hidden sm:flex items-center gap-3">
                 <Link
                   href="/sign-in"
-                  className="hidden sm:block text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-teal-500 dark:hover:text-teal-400 transition-all"
+                  className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-teal-500 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/contact"
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 text-white font-bold text-sm px-3 py-2 sm:px-4 sm:py-2.5 shadow-md shadow-teal-500/10 hover:shadow-teal-500/20 active:scale-95 transition-all duration-200"
+                  href="/sign-up"
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 hover:from-teal-500 hover:to-indigo-600 text-white font-bold text-xs px-4 py-2.5 shadow-md shadow-teal-500/10 transition-all duration-200 active:scale-95"
                 >
-                  <span className="hidden xs:inline">Get Started</span>
-                  <span className="xs:hidden">Contact</span>
-                  <ArrowRight size={14} className="hidden xs:inline" />
+                  <span>Get Started</span>
+                  <ArrowRight size={14} />
                 </Link>
-              </>
+              </div>
             )}
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex md:hidden h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400"
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
-
-          {/* Mobile Menu Toggle Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all duration-200 md:hidden cursor-pointer"
-            aria-label="Toggle mobile menu"
-          >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
         </div>
-      </div>
 
-      {/* Mobile Menu Dropdown */}
-      {mobileMenuOpen && (
-        <nav className="md:hidden border-t border-slate-200/40 bg-white/95 dark:border-slate-800/40 dark:bg-slate-950/95 backdrop-blur-md transition-all duration-300">
-          <ul className="flex flex-col gap-4 p-6">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.path;
-              return (
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <nav className="md:hidden border-t border-slate-200/40 dark:border-slate-800/40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md px-6 py-6 transition-all duration-300">
+            <ul className="flex flex-col gap-4">
+              {navLinks.map((link) => (
                 <li key={link.path}>
                   <Link
                     href={link.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`block text-base font-bold transition-all duration-200 hover:text-teal-500 ${
-                      isActive
-                        ? 'text-teal-500 dark:text-teal-400'
-                        : 'text-slate-600 dark:text-slate-400'
+                    className={`block text-base font-semibold transition-colors ${
+                      pathname === link.path
+                        ? 'text-teal-500 dark:text-teal-400 font-bold'
+                        : 'text-slate-700 dark:text-slate-300 hover:text-teal-500'
                     }`}
                   >
                     {link.name}
                   </Link>
                 </li>
-              );
-            })}
-            <hr className="border-slate-200/60 dark:border-slate-800/60 my-2" />
-            {isSignedIn ? (
-              <>
+              ))}
+              {isSignedIn ? (
+                <>
+                  {isTeamOrAdmin && (
+                    <li>
+                      <Link
+                        href="/team"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                      >
+                        Team Portal
+                      </Link>
+                    </li>
+                  )}
+                  {hasAdminPrivileges && (
+                    <li>
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-base font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                      >
+                        Admin Panel
+                      </Link>
+                    </li>
+                  )}
+                </>
+              ) : (
                 <li>
                   <Link
-                    href="/client"
+                    href="/sign-in"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block text-base font-bold text-slate-700 dark:text-slate-300 hover:text-teal-500"
+                    className="block text-base font-bold text-slate-700 dark:text-slate-300 hover:text-teal-500 dark:hover:text-teal-400"
                   >
-                    Client Dashboard
+                    Sign In
                   </Link>
                 </li>
-                {isTeamOrAdmin && (
-                  <li>
-                    <Link
-                      href="/team"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block text-base font-bold text-teal-600 dark:text-teal-400 hover:underline"
-                    >
-                      Team Portal
-                    </Link>
-                  </li>
-                )}
-                {hasAdminPrivileges && (
-                  <li>
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block text-base font-bold text-teal-600 dark:text-teal-400 hover:underline"
-                    >
-                      Admin Panel
-                    </Link>
-                  </li>
-                )}
-              </>
-            ) : (
-              <li>
-                <Link
-                  href="/sign-in"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-base font-bold text-slate-700 dark:text-slate-300 hover:text-teal-500 dark:hover:text-teal-400"
-                >
-                  Sign In
-                </Link>
-              </li>
-            )}
-          </ul>
-        </nav>
-      )}
-    </header>
-  </>
-);
+              )}
+            </ul>
+          </nav>
+        )}
+      </header>
+    </>
+  );
 }

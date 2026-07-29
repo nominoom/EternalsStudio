@@ -808,6 +808,7 @@ export default function AdminDashboard() {
             {activeTab === 'site-builder' && (
               <SiteBuilderTab />
             )}
+            )}
           </div>
         </div>
       </main>

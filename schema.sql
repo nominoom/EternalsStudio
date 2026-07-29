@@ -162,6 +162,12 @@ CREATE TABLE IF NOT EXISTS public.portfolio (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
+-- Enable RLS
+ALTER TABLE public.portfolio ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public select portfolio" ON public.portfolio FOR SELECT USING (true);
+CREATE POLICY "Allow admin insert portfolio" ON public.portfolio FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow admin delete portfolio" ON public.portfolio FOR DELETE USING (true);
+
 -- 10. Site Content Table (Zero-Code Visual Builder & Data Manager)
 CREATE TABLE IF NOT EXISTS public.site_content (
     id INT PRIMARY KEY DEFAULT 1,
@@ -174,6 +180,7 @@ CREATE TABLE IF NOT EXISTS public.site_content (
 ALTER TABLE public.site_content ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public select site_content" ON public.site_content FOR SELECT USING (true);
 CREATE POLICY "Allow service role update site_content" ON public.site_content FOR ALL USING (true);
+
 
 
 
