@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import SiteBuilderTab from '../../components/SiteBuilderTab';
 import { 
   ShieldAlert, 
   DollarSign, 
@@ -25,7 +26,8 @@ import {
   Info,
   Briefcase,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from 'lucide-react';
 
 interface Order {
@@ -80,7 +82,7 @@ const mockEvents: SystemEvent[] = [
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'requests' | 'logs'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'requests' | 'logs' | 'site-builder'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
@@ -348,13 +350,22 @@ export default function AdminDashboard() {
                 Manager panel &bull; Role: Admin
               </p>
             </div>
-            <Link
-              href="/team"
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 font-bold text-xs px-5 py-3 transition-all shadow-sm cursor-pointer self-start sm:self-auto"
-            >
-              <span>Go to Team Portal</span>
-              <ChevronRight size={14} />
-            </Link>
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <button
+                onClick={() => setActiveTab('site-builder')}
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-extrabold text-xs px-5 py-3 transition-all shadow-md shadow-teal-500/10 cursor-pointer"
+              >
+                <Sparkles size={16} />
+                <span>⚡ Launch Site Content Builder</span>
+              </button>
+              <Link
+                href="/team"
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 font-bold text-xs px-5 py-3 transition-all shadow-sm cursor-pointer"
+              >
+                <span>Go to Team Portal</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -406,7 +417,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex border-b border-slate-200/60 dark:border-slate-800/60 gap-8 overflow-x-auto">
-            {['orders', 'messages', 'requests', 'logs'].map((tab) => (
+            {['orders', 'messages', 'requests', 'logs', 'site-builder'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -422,7 +433,9 @@ export default function AdminDashboard() {
                     ? 'Support Messages' 
                     : tab === 'requests'
                       ? 'Project Requests'
-                      : 'Logs & Deployments'}
+                      : tab === 'logs'
+                        ? 'Logs & Deployments'
+                        : '⚡ Site Content Builder'}
               </button>
             ))}
           </div>
@@ -790,6 +803,10 @@ export default function AdminDashboard() {
                   )
                 )}
               </div>
+            )}
+
+            {activeTab === 'site-builder' && (
+              <SiteBuilderTab />
             )}
           </div>
         </div>

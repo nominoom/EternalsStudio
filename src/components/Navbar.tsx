@@ -7,6 +7,7 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import { ShoppingCart, Moon, Sun, ArrowRight, Menu, X, Shield } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAdmin } from '../context/AdminContext';
+import { useSiteContent } from '../context/SiteContentContext';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { cart, toggleCart } = useCart();
   const { hasAdminPrivileges, toggleAdminSidebar } = useAdmin();
+  const { siteContent } = useSiteContent();
 
   // Load theme preference on mount
   useEffect(() => {
@@ -56,13 +58,26 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 sm:px-8">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50">
-          <span className="text-teal-500 text-2xl font-bold">◆</span>
-          <span>Eternals Studio</span>
-        </Link>
+    <>
+      {/* Top Announcement Bar */}
+      {siteContent.branding.showAnnouncementBar && (
+        <div className="w-full bg-gradient-to-r from-teal-500 to-indigo-600 py-2 px-4 text-center text-xs font-bold text-white flex items-center justify-center gap-2 shadow-inner">
+          <span>{siteContent.branding.announcementBarText}</span>
+          {siteContent.branding.announcementBarLink && (
+            <Link href={siteContent.branding.announcementBarLink} className="underline hover:opacity-80 transition-opacity">
+              Learn More &rarr;
+            </Link>
+          )}
+        </div>
+      )}
+
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 sm:px-8">
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50">
+            <span className="text-teal-500 text-2xl font-bold">◆</span>
+            <span>{siteContent.branding.siteName}</span>
+          </Link>
 
         {/* Navigation Links (Desktop) */}
         <nav className="hidden md:block">
@@ -284,5 +299,6 @@ export default function Navbar() {
         </nav>
       )}
     </header>
-  );
+  </>
+);
 }
