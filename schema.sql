@@ -162,11 +162,19 @@ CREATE TABLE IF NOT EXISTS public.portfolio (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
+-- 10. Site Config Table (Admin Redesign & Theme Studio)
+CREATE TABLE IF NOT EXISTS public.site_config (
+    id INT PRIMARY KEY DEFAULT 1,
+    config JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    CONSTRAINT single_row_site_config CHECK (id = 1)
+);
+
 -- Enable RLS
-ALTER TABLE public.portfolio ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public select portfolio" ON public.portfolio FOR SELECT USING (true);
-CREATE POLICY "Allow admin insert portfolio" ON public.portfolio FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow admin delete portfolio" ON public.portfolio FOR DELETE USING (true);
+ALTER TABLE public.site_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public select site_config" ON public.site_config FOR SELECT USING (true);
+CREATE POLICY "Allow service role update site_config" ON public.site_config FOR ALL USING (true);
+
 
 
 

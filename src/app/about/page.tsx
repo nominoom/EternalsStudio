@@ -3,9 +3,12 @@
 import React from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import { useSiteConfig } from '../../context/SiteConfigContext';
 import { Target, Eye, Gem, Users, Award, ShieldAlert } from 'lucide-react';
 
 export default function About() {
+  const { siteConfig } = useSiteConfig();
+
   const team = [
     { name: 'Fives', role: 'Founder & Lead Developer', initial: 'F', color: 'bg-teal-500' },
     { name: 'Pivotalonic', role: 'Co-Founder & UI/UX Designer', initial: 'P', color: 'bg-indigo-500' },
@@ -32,39 +35,60 @@ export default function About() {
         
         {/* Banner Section */}
         <section className="mx-auto max-w-7xl relative z-10 mb-16">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-teal-400/90 to-indigo-600/90 p-12 sm:p-20 text-white text-center shadow-xl shadow-teal-500/10">
+          <div 
+            className="relative rounded-3xl overflow-hidden p-12 sm:p-20 text-white text-center shadow-xl shadow-teal-500/10 transition-all"
+            style={{
+              backgroundImage: `linear-gradient(to bottom right, ${siteConfig.theme.primaryColor}, ${siteConfig.theme.accentColor})`
+            }}
+          >
             <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
             <div className="relative z-10 flex flex-col items-center gap-4">
               <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-2">
                 ◆
               </div>
-              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Creating Visual Excellence</h1>
-              <p className="text-sm sm:text-lg text-teal-50/90 max-w-xl font-medium leading-relaxed">
-                Where ideas meet professional performance. We build digital identities for organizations across business and gaming fields.
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                {siteConfig.aboutPage.headerTitle}
+              </h1>
+              <p className="text-sm sm:text-lg text-white/90 max-w-xl font-medium leading-relaxed">
+                {siteConfig.aboutPage.headerSubtitle}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Mission Section */}
+        {/* Mission & Story Section */}
         <section className="mx-auto max-w-7xl relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24">
           <div className="flex flex-col gap-6">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Our Mission</h2>
-            <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              We are dedicated to enhancing the success of individuals and organizations across various fields, including business and esports, through our exceptional graphical and web expertise. We understand that compelling visuals and fast applications are essential in capturing attention.
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+              {siteConfig.aboutPage.storyTitle || 'Our Mission'}
+            </h2>
+            <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400 whitespace-pre-line">
+              {siteConfig.aboutPage.storyContent}
             </p>
-            <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              Whether it's creating stunning logos, immersive esports graphics, or engaging web interfaces, our team is committed to delivering high-quality solutions that elevate brands, solve complex logistics, and drive sustainable growth.
-            </p>
+            {siteConfig.aboutPage.visionContent && (
+              <div className="pt-2 border-t border-gray-800/40">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  {siteConfig.aboutPage.visionTitle || 'Our Core Vision'}
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                  {siteConfig.aboutPage.visionContent}
+                </p>
+              </div>
+            )}
           </div>
           <div className="h-64 sm:h-96 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-8 shadow-sm">
-            {/* Mission Illustration (Vector monograms logo text) */}
+            {/* Mission Illustration */}
             <div className="text-center flex flex-col gap-4 font-black">
-              <span className="text-5xl sm:text-7xl bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent tracking-widest font-extrabold uppercase">
-                Eternals
+              <span 
+                className="text-5xl sm:text-7xl bg-clip-text text-transparent tracking-widest font-extrabold uppercase"
+                style={{
+                  backgroundImage: `linear-gradient(to right, ${siteConfig.theme.primaryColor}, ${siteConfig.theme.accentColor})`
+                }}
+              >
+                {siteConfig.branding.siteName}
               </span>
               <span className="text-sm uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500 font-bold">
-                Visuals & Dev
+                {siteConfig.branding.logoSubtitle}
               </span>
             </div>
           </div>

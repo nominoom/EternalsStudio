@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import SiteEditorTab from '../../components/SiteEditorTab';
 import { 
   ShieldAlert, 
   DollarSign, 
@@ -25,7 +26,8 @@ import {
   Info,
   Briefcase,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from 'lucide-react';
 
 interface Order {
@@ -80,7 +82,7 @@ const mockEvents: SystemEvent[] = [
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'requests' | 'logs'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'requests' | 'logs' | 'site-editor'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
@@ -406,7 +408,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex border-b border-slate-200/60 dark:border-slate-800/60 gap-8 overflow-x-auto">
-            {['orders', 'messages', 'requests', 'logs'].map((tab) => (
+            {['orders', 'messages', 'requests', 'logs', 'site-editor'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -422,7 +424,9 @@ export default function AdminDashboard() {
                     ? 'Support Messages' 
                     : tab === 'requests'
                       ? 'Project Requests'
-                      : 'Logs & Deployments'}
+                      : tab === 'logs'
+                        ? 'Logs & Deployments'
+                        : '🎨 Site Redesign & Builder'}
               </button>
             ))}
           </div>
@@ -790,6 +794,10 @@ export default function AdminDashboard() {
                   )
                 )}
               </div>
+            )}
+
+            {activeTab === 'site-editor' && (
+              <SiteEditorTab />
             )}
           </div>
         </div>

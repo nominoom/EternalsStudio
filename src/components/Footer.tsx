@@ -3,8 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { Mail, Phone, Clock, ArrowUpRight } from 'lucide-react';
+import { useSiteConfig } from '../context/SiteConfigContext';
 
 export default function Footer() {
+  const { siteConfig } = useSiteConfig();
+
   return (
     <footer className="w-full border-t border-slate-200/50 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 py-12 transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -12,17 +15,28 @@ export default function Footer() {
         {/* Column 1: Brand Info */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 font-extrabold text-lg text-slate-900 dark:text-slate-50">
-            <span className="text-teal-500 font-bold">◆</span>
-            <span>Eternals Studio</span>
+            <span className="font-bold" style={{ color: siteConfig.theme.primaryColor }}>◆</span>
+            <span>{siteConfig.branding.siteName}</span>
           </div>
           <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            Professional graphic design, web development, and creative solutions for your business needs.
+            {siteConfig.footer.description || siteConfig.branding.logoSubtitle}
           </p>
           <div className="flex gap-4 mt-2">
-            {/* Custom mock social links */}
-            <a href="#" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">Instagram</a>
-            <a href="#" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">Discord</a>
-            <a href="#" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">Twitter</a>
+            {siteConfig.footer.twitterUrl && (
+              <a href={siteConfig.footer.twitterUrl} target="_blank" rel="noreferrer" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">
+                Twitter
+              </a>
+            )}
+            {siteConfig.footer.discordUrl && (
+              <a href={siteConfig.footer.discordUrl} target="_blank" rel="noreferrer" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">
+                Discord
+              </a>
+            )}
+            {siteConfig.footer.githubUrl && (
+              <a href={siteConfig.footer.githubUrl} target="_blank" rel="noreferrer" className="hover:text-teal-500 text-sm font-semibold transition-colors duration-200">
+                GitHub
+              </a>
+            )}
           </div>
         </div>
 
@@ -55,16 +69,20 @@ export default function Footer() {
           <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 uppercase tracking-wider">Contact</h3>
           <ul className="flex flex-col gap-3.5 text-sm font-medium">
             <li className="flex items-center gap-2.5">
-              <Mail size={16} className="text-teal-500" />
-              <a href="mailto:Eternalsanctuarygg@gmail.com" className="hover:text-teal-500 transition-colors">Eternalsanctuarygg@gmail.com</a>
+              <Mail size={16} style={{ color: siteConfig.theme.primaryColor }} />
+              <a href={`mailto:${siteConfig.contactPage.email}`} className="hover:text-teal-500 transition-colors">
+                {siteConfig.contactPage.email}
+              </a>
             </li>
             <li className="flex items-center gap-2.5">
-              <Phone size={16} className="text-teal-500" />
-              <a href="tel:+12405233976" className="hover:text-teal-500 transition-colors">(240) 523-3976</a>
+              <Phone size={16} style={{ color: siteConfig.theme.primaryColor }} />
+              <a href={`tel:${siteConfig.contactPage.phone}`} className="hover:text-teal-500 transition-colors">
+                {siteConfig.contactPage.phone}
+              </a>
             </li>
             <li className="flex items-center gap-2.5">
-              <Clock size={16} className="text-teal-500" />
-              <span>24/7 Support Available</span>
+              <Clock size={16} style={{ color: siteConfig.theme.primaryColor }} />
+              <span>{siteConfig.contactPage.responseTimeText || '24/7 Support Available'}</span>
             </li>
           </ul>
         </div>
@@ -72,7 +90,7 @@ export default function Footer() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 sm:px-8 mt-12 pt-6 border-t border-slate-200/40 dark:border-slate-800/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-400 dark:text-slate-500">
-        <p>&copy; 2026 Eternals Studio. All rights reserved.</p>
+        <p>{siteConfig.footer.copyrightText}</p>
         <div className="flex gap-6">
           <a href="#" className="hover:text-teal-500 transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-teal-500 transition-colors">Terms of Service</a>
