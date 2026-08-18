@@ -7,6 +7,7 @@ import { SiteContentProvider } from "../context/SiteContentContext";
 import CartDrawer from "../components/CartDrawer";
 import AdminSidebar from "../components/AdminSidebar";
 import BubbleBackground from "../components/BubbleBackground";
+import TawkWidget from "../components/TawkWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
                 {children}
                 <CartDrawer />
                 <AdminSidebar />
+                <TawkWidget />
               </CartProvider>
             </AdminProvider>
           </SiteContentProvider>
