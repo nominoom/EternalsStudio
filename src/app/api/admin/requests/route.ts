@@ -1,22 +1,17 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '../../../../lib/supabase';
-import { logEvent } from '../../../../lib/logger';
+import { requireAdmin } from '@/lib/auth';
+import { supabaseAdmin } from '@/lib/supabase';
+import { logEvent } from '@/lib/logger';
 
 // DELETE: Soft delete a project request (mark deleted_at = now())
 export async function DELETE(req: Request): Promise<Response> {
   try {
-    // 1. Authenticate with Clerk
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
+    // 1. Authenticate with Clerk & validate administrator privileges
+    const auth = await requireAdmin();
+    if (!auth.ok) {
+      return auth.response as unknown as Response;
     }
-
-    // 2. Validate administrator privileges
-    const isAdmin = user.publicMetadata?.role === 'admin';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 }) as unknown as Response;
-    }
+    const user = auth.user;
 
     const { searchParams } = new URL(req.url);
     const requestId = searchParams.get('id');
@@ -67,17 +62,12 @@ export async function DELETE(req: Request): Promise<Response> {
 // PATCH: Restore a soft deleted project request (mark deleted_at = null)
 export async function PATCH(req: Request): Promise<Response> {
   try {
-    // 1. Authenticate with Clerk
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
+    // 1. Authenticate with Clerk & validate administrator privileges
+    const auth = await requireAdmin();
+    if (!auth.ok) {
+      return auth.response as unknown as Response;
     }
-
-    // 2. Validate administrator privileges
-    const isAdmin = user.publicMetadata?.role === 'admin';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Access denied: Administrator privileges required' }, { status: 403 }) as unknown as Response;
-    }
+    const user = auth.user;
 
     const { requestId } = await req.json();
     if (!requestId) {

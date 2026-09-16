@@ -1,23 +1,16 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { requireAdmin } from '@/lib/auth';
 import { Resend } from 'resend';
-import { supabaseAdmin } from '../../../../lib/supabase';
-import { logEvent } from '../../../../lib/logger';
+import { supabaseAdmin } from '@/lib/supabase';
+import { logEvent } from '@/lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder_key');
 
 // PATCH: Update message status (read, replied, archived)
 export async function PATCH(req: Request): Promise<Response> {
   try {
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
-    }
-
-    const isAdmin = user.publicMetadata?.role === 'admin';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Administrator role required' }, { status: 403 }) as unknown as Response;
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const { id, status } = await req.json();
     if (!id || !status) {
@@ -41,15 +34,9 @@ export async function PATCH(req: Request): Promise<Response> {
 // POST: Send an email reply to client and mark replied
 export async function POST(req: Request): Promise<Response> {
   try {
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
-    }
-
-    const isAdmin = user.publicMetadata?.role === 'admin';
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Administrator role required' }, { status: 403 }) as unknown as Response;
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+    const user = auth.user;
 
     const { id, toEmail, toName, subject, replyMessage } = await req.json();
     if (!toEmail || !replyMessage) {

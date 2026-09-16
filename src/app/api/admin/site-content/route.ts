@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
+import { requireAdmin } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET() {
@@ -24,12 +24,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const user = await currentUser();
-    const role = user?.publicMetadata?.role;
-
-    if (!user || role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 403 });
-    }
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
 
     const body = await req.json();
     if (!body.content || typeof body.content !== 'object') {

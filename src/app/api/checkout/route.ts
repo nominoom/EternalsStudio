@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { currentUser } from '@clerk/nextjs/server';
+import { requireUser } from '@/lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key', {
   apiVersion: '2026-06-24.dahlia', // updated to match local sdk version
@@ -8,10 +8,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_
 
 export async function POST(req: Request) {
   try {
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const auth = await requireUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { items, scopeType = 'personal', organizationName = '' } = await req.json();
     if (!items || items.length === 0) {

@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '../../../../lib/supabase';
-import { logEvent } from '../../../../lib/logger';
+import { requireUser } from '@/lib/auth';
+import { supabaseAdmin } from '@/lib/supabase';
+import { logEvent } from '@/lib/logger';
 
 export async function POST(req: Request): Promise<Response> {
   try {
     // 1. Authenticate with Clerk
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 }) as unknown as Response;
+    const auth = await requireUser();
+    if (!auth.ok) {
+      return auth.response as unknown as Response;
     }
+    const user = auth.user;
 
     const { requestId } = await req.json();
     if (!requestId) {
