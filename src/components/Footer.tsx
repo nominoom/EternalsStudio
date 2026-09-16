@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Mail, Phone, Clock, ArrowUpRight } from 'lucide-react';
+import { Mail, Phone, Clock } from 'lucide-react';
 import { useSiteContent } from '../context/SiteContentContext';
 
 export default function Footer() {
@@ -98,8 +98,8 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 sm:px-8 mt-12 pt-6 border-t border-slate-200/40 dark:border-slate-800/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-400 dark:text-slate-500">
         <p>{siteContent.footer.copyrightText}</p>
         <div className="flex gap-6">
-          <a href="#" className="hover:text-teal-500 transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-teal-500 transition-colors">Terms of Service</a>
+          <Link href="/privacy-policy" className="hover:text-teal-500 transition-colors">Privacy Policy</Link>
+          <Link href="/terms-of-service" className="hover:text-teal-500 transition-colors">Terms of Service</Link>
         </div>
       </div>
     </footer>

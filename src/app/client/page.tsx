@@ -89,7 +89,6 @@ export default function ClientPortal() {
 
   // Helper to fetch and merge client requests
   async function fetchRequests(email: string) {
-    console.log('[ClientPortal] fetchRequests called for email:', email);
     let dbRequests: ProjectRequest[] = [];
     try {
       const { data, error } = await supabase
@@ -99,16 +98,12 @@ export default function ClientPortal() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('[ClientPortal] Supabase query error:', error);
-      } else {
-        console.log(`[ClientPortal] Fetched ${data?.length || 0} requests from database:`, data);
-      }
-
-      if (!error && data) {
+        console.error('Failed to query project requests:', error.message);
+      } else if (data) {
         dbRequests = data as ProjectRequest[];
       }
-    } catch (e) {
-      console.warn('[ClientPortal] Failed to query live database project requests:', e);
+    } catch (e: any) {
+      console.error('Database query exception for project requests:', e.message || e);
     }
 
     const localRequests = typeof window !== 'undefined' 
@@ -150,8 +145,8 @@ export default function ClientPortal() {
           items: o.order_items || [],
         }));
       }
-    } catch (err) {
-      console.warn('[ClientPortal] Failed to query live database orders:', err);
+    } catch (err: any) {
+      console.error('Database query exception for orders:', err.message || err);
     }
 
     const localOrders = typeof window !== 'undefined'
@@ -170,19 +165,15 @@ export default function ClientPortal() {
   }
 
   useEffect(() => {
-    console.log('[ClientPortal] useEffect running. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
     if (!isLoaded) return;
 
     if (!isSignedIn) {
-      console.log('[ClientPortal] User not signed in, redirecting to sign-in...');
       window.location.href = `/sign-in?redirect_url=${window.location.href}`;
       return;
     }
 
     const email = user.emailAddresses?.[0]?.emailAddress;
-    console.log('[ClientPortal] Resolved Clerk email address:', email);
     if (!email) {
-      console.warn('[ClientPortal] No email address found for the signed-in user.');
       setLoading(false);
       return;
     }
@@ -194,77 +185,64 @@ export default function ClientPortal() {
     const success = urlParams.get('success') === 'true';
     const sessionId = urlParams.get('session_id');
 
-    console.log('[ClientPortal] URL parameters parsed:', {
-      mockPayment,
-      requestId,
-      success,
-      sessionId,
-      rawQuery: window.location.search
-    });
-
     async function handlePaymentRedirects() {
       if (mockPayment && requestId) {
-        console.log('[ClientPortal] Detected redirect from mock payment. Request ID:', requestId);
-        // 1. Update status in database
-        try {
-          console.log('[ClientPortal] Attempting to update database status to approved for request:', requestId);
-          const { error } = await supabase
-            .from('project_requests')
-            .update({ status: 'approved' })
-            .eq('id', requestId);
-          
-          if (error) throw error;
-          console.log('[ClientPortal] Successfully updated mock request status to approved in Supabase');
-        } catch (err: any) {
-          console.error('[ClientPortal] Failed to update mock request status in database:', err.message);
-        }
-
-        // 2. Mock update local storage status
-        console.log('[ClientPortal] Updating status to approved in localStorage');
-        const localRequests = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
-        console.log('[ClientPortal] Current local storage custom requests count:', localRequests.length);
-        const updated = localRequests.map((r: any) => 
-          r.id === requestId ? { ...r, status: 'approved' } : r
-        );
-        localStorage.setItem('localCustomRequests', JSON.stringify(updated));
-
-        // Alert mock checkouts
-        alert('Success: Mock payment complete! Your project status is updated to "Approved" (Paid) and has been delegated as an Open Task in the Team Portal.');
-        
-        // Clean URL params
-        console.log('[ClientPortal] Cleaning URL params from browser address bar...');
-        window.history.replaceState({}, document.title, window.location.pathname);
-        fetchRequests(email);
-      } else if (success && sessionId) {
-        console.log('[ClientPortal] Detected redirect from Stripe success session. Session ID:', sessionId);
         setVerifying(true);
         try {
-          console.log('[ClientPortal] Calling verify API route /api/checkout/verify...');
+          const response = await fetch('/api/checkout/verify-mock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestId }),
+          });
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            // Update local storage status
+            const localRequests: ProjectRequest[] = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
+            const updated = localRequests.map((r) => 
+              r.id === requestId ? { ...r, status: 'approved' as const } : r
+            );
+            localStorage.setItem('localCustomRequests', JSON.stringify(updated));
+
+            alert('Success: Mock payment verified! Your project status is updated to "Approved" (Paid) and has been delegated as an active task in the Team Portal.');
+          } else {
+            console.error('Mock payment verification failed:', data.error);
+            alert(data.error || 'Mock payment verification failed.');
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('Mock payment verification network error:', message);
+          alert('Error verifying mock payment: ' + message);
+        } finally {
+          setVerifying(false);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          fetchRequests(email);
+        }
+      } else if (success && sessionId) {
+        setVerifying(true);
+        try {
           const response = await fetch('/api/checkout/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId })
           });
           const data = await response.json();
-          console.log('[ClientPortal] Verify API response:', data);
           if (response.ok && data.success) {
             alert('Success: Your project invoice payment has been confirmed! Your request is now delegated as an active task in the Team Portal.');
           } else {
-            console.error('[ClientPortal] Verification failed on server:', data.error);
+            console.error('Verification failed on server:', data.error);
             alert(data.error || 'Payment verification completed, but could not update status. Please refresh or contact support.');
           }
-        } catch (err: any) {
-          console.error('[ClientPortal] Network error during payment verification:', err.message);
-          alert('Error verifying payment: ' + err.message);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('Network error during payment verification:', message);
+          alert('Error verifying payment: ' + message);
         } finally {
           setVerifying(false);
-          // Clean URL params
-          console.log('[ClientPortal] Cleaning URL params from browser address bar...');
           window.history.replaceState({}, document.title, window.location.pathname);
           fetchRequests(email);
         }
       } else {
-        console.log('[ClientPortal] No payment redirect parameters detected. Fetching normal request history...');
         fetchRequests(email);
       }
     }
