@@ -42,6 +42,8 @@ export default function AdminSidebar() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('templates');
   const [imageUrl, setImageUrl] = useState('');
+  const [downloadFileUrl, setDownloadFileUrl] = useState('');
+  const [isExclusive, setIsExclusive] = useState(false);
 
   // Form State - Portfolio
   const [portTitle, setPortTitle] = useState('');
@@ -50,6 +52,24 @@ export default function AdminSidebar() {
   const [portDescription, setPortDescription] = useState('');
   const [portTags, setPortTags] = useState('');
   const [portImageUrl, setPortImageUrl] = useState('');
+  const [portFileUrl, setPortFileUrl] = useState('');
+  const [portFileName, setPortFileName] = useState('');
+
+  const handlePortfolioAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      setFeedback({ type: 'error', message: 'Asset file size should be less than 25MB.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setPortFileUrl(reader.result as string);
+      setPortFileName(file.name);
+      setFeedback({ type: 'success', message: `Attached file "${file.name}" to portfolio project!` });
+    };
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'portfolio') => {
     const file = e.target.files?.[0];
@@ -118,6 +138,8 @@ export default function AdminSidebar() {
       price: priceNum,
       category,
       image_url: imageUrl || '',
+      download_file_url: downloadFileUrl || '',
+      is_exclusive: isExclusive,
     };
 
     try {
@@ -136,6 +158,8 @@ export default function AdminSidebar() {
         setDescription('');
         setPrice('');
         setImageUrl('');
+        setDownloadFileUrl('');
+        setIsExclusive(false);
         triggerCatalogRefresh();
       } else {
         throw new Error(data.error || 'Server error adding product');
@@ -162,6 +186,8 @@ export default function AdminSidebar() {
         setDescription('');
         setPrice('');
         setImageUrl('');
+        setDownloadFileUrl('');
+        setIsExclusive(false);
         triggerCatalogRefresh();
       } catch (fallbackErr) {
         setFeedback({ type: 'error', message: 'Failed to write product locally.' });
@@ -193,6 +219,8 @@ export default function AdminSidebar() {
       description: portDescription,
       tags: tagsArray,
       image_url: portImageUrl || '',
+      file_url: portFileUrl || '',
+      file_name: portFileName || '',
     };
 
     try {
@@ -212,6 +240,8 @@ export default function AdminSidebar() {
         setPortDescription('');
         setPortTags('');
         setPortImageUrl('');
+        setPortFileUrl('');
+        setPortFileName('');
         triggerCatalogRefresh();
       } else {
         throw new Error(data.error || 'Server error uploading portfolio project');
@@ -240,6 +270,8 @@ export default function AdminSidebar() {
         setPortDescription('');
         setPortTags('');
         setPortImageUrl('');
+        setPortFileUrl('');
+        setPortFileName('');
         triggerCatalogRefresh();
       } catch (fallbackErr) {
         setFeedback({ type: 'error', message: 'Failed to write portfolio project locally.' });
@@ -481,6 +513,33 @@ export default function AdminSidebar() {
                   )}
                 </div>
 
+                {/* Digital Download Asset Attachment */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-455">Digital Asset Download URL (Deliverable ZIP)</label>
+                  <input
+                    type="text"
+                    value={downloadFileUrl}
+                    onChange={(e) => setDownloadFileUrl(e.target.value)}
+                    placeholder="https://... or /downloads/asset-package.zip"
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500"
+                  />
+                  <span className="text-[10px] text-slate-400">Buyers receive this download directly in their Client Portal upon purchase.</span>
+                </div>
+
+                {/* Exclusive Package Checkbox */}
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <input
+                    type="checkbox"
+                    id="isExclusiveCheck"
+                    checked={isExclusive}
+                    onChange={(e) => setIsExclusive(e.target.checked)}
+                    className="h-4 w-4 rounded accent-teal-500 cursor-pointer"
+                  />
+                  <label htmlFor="isExclusiveCheck" className="text-xs font-bold text-amber-800 dark:text-amber-300 cursor-pointer select-none">
+                    1-of-1 Exclusive Item (Sold to only 1 client, closed after checkout)
+                  </label>
+                </div>
+
                 {/* Live Store Card Preview */}
                 <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-slate-200/40 dark:border-slate-800/40">
                   <span className="text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1">
@@ -639,6 +698,43 @@ export default function AdminSidebar() {
                         onClick={() => setPortImageUrl('')}
                         className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
                         title="Remove Image"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Project Deliverable Files / Assets */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-450">
+                    Project Deliverable Files (ZIP, PSD, AI, OBJ, PDF)
+                  </label>
+                  <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs font-bold transition-all cursor-pointer">
+                    <Upload size={14} />
+                    <span>Upload Portfolio Deliverable File</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={handlePortfolioAssetUpload}
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    value={portFileUrl}
+                    onChange={(e) => setPortFileUrl(e.target.value)}
+                    placeholder="Or enter direct downloadable asset URL"
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500"
+                  />
+                  {portFileName && (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                      <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 truncate">
+                        Attached: {portFileName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setPortFileUrl(''); setPortFileName(''); }}
+                        className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"
                       >
                         <X size={14} />
                       </button>

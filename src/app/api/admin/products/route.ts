@@ -18,29 +18,52 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // 3. Parse and validate payload
-    const { name, description, price, category, image_url } = await req.json();
+    const body = await req.json();
+    const { name, description, price, category, image_url, download_file_url, is_exclusive } = body;
 
     if (!name || typeof price !== 'number' || !category) {
       return NextResponse.json({ error: 'Missing required fields: name, price, or category' }, { status: 400 }) as unknown as Response;
     }
 
     // 4. Insert product into Supabase Database
-    const { data: product, error: dbError } = await supabaseAdmin
-      .from('products')
-      .insert([
-        {
-          name,
-          description: description || '',
-          price,
-          category,
-          image_url: image_url || '',
-        }
-      ])
-      .select()
-      .single();
+    let productData: any = null;
+    try {
+      const { data, error: dbError } = await supabaseAdmin
+        .from('products')
+        .insert([
+          {
+            name,
+            description: description || '',
+            price,
+            category,
+            image_url: image_url || '',
+            download_file_url: download_file_url || null,
+            is_exclusive: Boolean(is_exclusive),
+          }
+        ])
+        .select()
+        .single();
 
-    if (dbError) {
-      throw dbError;
+      if (dbError) throw dbError;
+      productData = data;
+    } catch (insertErr: any) {
+      // If download_file_url or is_exclusive column doesn't exist yet, insert core fields
+      const { data, error: fallbackError } = await supabaseAdmin
+        .from('products')
+        .insert([
+          {
+            name,
+            description: description || '',
+            price,
+            category,
+            image_url: image_url || '',
+          }
+        ])
+        .select()
+        .single();
+
+      if (fallbackError) throw fallbackError;
+      productData = { ...data, download_file_url, is_exclusive };
     }
 
     // 5. Log product addition event
@@ -50,10 +73,10 @@ export async function POST(req: Request): Promise<Response> {
       'database',
       'success',
       `Administrator created product "${name}" ($${price}) under category "${category}".`,
-      { actor: adminEmail, product_id: product.id, price }
+      { actor: adminEmail, product_id: productData?.id, price }
     );
 
-    return NextResponse.json({ success: true, product }) as unknown as Response;
+    return NextResponse.json({ success: true, product: productData }) as unknown as Response;
   } catch (error: any) {
     console.error('Product Creation API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;

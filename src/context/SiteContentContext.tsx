@@ -9,6 +9,11 @@ export interface TeamMember {
   initial: string;
   color: string;
   avatarUrl?: string;
+  bio?: string;
+  specialties?: string[];
+  discord?: string;
+  twitter?: string;
+  github?: string;
 }
 
 export interface StatItem {
@@ -27,6 +32,16 @@ export interface PromoBanner {
   buttonText: string;
   buttonLink: string;
   enabled: boolean;
+}
+
+export interface ReviewItem {
+  id: string;
+  author: string;
+  role: string;
+  company: string;
+  avatarUrl?: string;
+  rating: number; // 1-5
+  content: string;
 }
 
 export interface SiteContent {
@@ -54,11 +69,13 @@ export interface SiteContent {
   stats: StatItem[];
   team: TeamMember[];
   promoBanners: PromoBanner[];
+  reviews: ReviewItem[];
   sections: {
     showStoreGrid: boolean;
     showPortfolioShowcase: boolean;
     showServicesGrid: boolean;
     showTeamSection: boolean;
+    showReviewsSection: boolean;
     showCtaBanner: boolean;
     ctaBannerTitle: string;
     ctaBannerDescription: string;
@@ -119,12 +136,73 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     { id: 'st-4', value: '24/7', label: 'Support Available' }
   ],
   team: [
-    { id: 'tm-1', name: 'Fives', role: 'Founder & Lead Developer', initial: 'F', color: 'bg-teal-500' },
-    { id: 'tm-2', name: 'Pivotalonic', role: 'Co-Founder & UI/UX Designer', initial: 'P', color: 'bg-indigo-500' },
-    { id: 'tm-3', name: 'Khas', role: '3D Modeler & Motion Artist', initial: 'K', color: 'bg-pink-500' },
-    { id: 'tm-4', name: 'In-Gloom Media', role: 'Lead Video Editor & Animator', initial: 'I', color: 'bg-amber-500' },
-    { id: 'tm-5', name: 'Qzlf', role: 'Graphic Designer & Concept Illustrator', initial: 'Q', color: 'bg-emerald-500' },
-    { id: 'tm-6', name: 'Curtain', role: 'Community Manager & Support Lead', initial: 'C', color: 'bg-rose-500' }
+    {
+      id: 'tm-1',
+      name: 'Fives',
+      role: 'Founder & Lead Developer',
+      initial: 'F',
+      color: 'bg-teal-500',
+      bio: 'Architecting ultra-fast web experiences, cloud infrastructure, and custom platform integrations for creators and esports organizations.',
+      specialties: ['Next.js / React', 'Cloud Infrastructure', 'Stripe Architecture'],
+      discord: 'fives#0001',
+      twitter: 'https://twitter.com/eternals',
+      github: 'https://github.com'
+    },
+    {
+      id: 'tm-2',
+      name: 'Pivotalonic',
+      role: 'Co-Founder & UI/UX Designer',
+      initial: 'P',
+      color: 'bg-indigo-500',
+      bio: 'Crafting pixel-perfect interface identities, Figma prototypes, and responsive visual systems.',
+      specialties: ['UI/UX Design', 'Design Systems', 'Brand Strategy'],
+      discord: 'pivotalonic#0001',
+      twitter: 'https://twitter.com/eternals'
+    },
+    {
+      id: 'tm-3',
+      name: 'Khas',
+      role: '3D Modeler & Motion Artist',
+      initial: 'K',
+      color: 'bg-pink-500',
+      bio: 'Transforming complex conceptual ideas into cinematic 3D renders, spatial assets, and lighting models.',
+      specialties: ['Cinema 4D', 'Blender', 'PBR Shaders'],
+      discord: 'khas#0001',
+      twitter: 'https://twitter.com/eternals'
+    },
+    {
+      id: 'tm-4',
+      name: 'In-Gloom Media',
+      role: 'Lead Video Editor & Animator',
+      initial: 'I',
+      color: 'bg-amber-500',
+      bio: 'Directing impactful trailers, broadcast graphics, kinetic typography, and esports tournament sequences.',
+      specialties: ['After Effects', 'Premiere Pro', 'Motion Graphics'],
+      discord: 'ingloom#0001',
+      twitter: 'https://twitter.com/eternals'
+    },
+    {
+      id: 'tm-5',
+      name: 'Qzlf',
+      role: 'Graphic Designer & Concept Illustrator',
+      initial: 'Q',
+      color: 'bg-emerald-500',
+      bio: 'Creating signature vector emblems, tournament jerseys, stream packs, and team branding packages.',
+      specialties: ['Vector Branding', 'Esports Logos', 'Merchandise'],
+      discord: 'qzlf#0001',
+      twitter: 'https://twitter.com/eternals'
+    },
+    {
+      id: 'tm-6',
+      name: 'Curtain',
+      role: 'Community Manager & Support Lead',
+      initial: 'C',
+      color: 'bg-rose-500',
+      bio: 'Ensuring seamless client communication, swift turnaround, milestone tracking, and dedicated project delivery.',
+      specialties: ['Client Operations', 'Discord Support', 'Project Delivery'],
+      discord: 'curtain#0001',
+      twitter: 'https://twitter.com/eternals'
+    }
   ],
   promoBanners: [
     {
@@ -139,11 +217,46 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       enabled: true
     }
   ],
+  reviews: [
+    {
+      id: 'rev-1',
+      author: "Marcus 'Apex' Vance",
+      role: 'Founder & Team Captain',
+      company: 'Apex Predator Clan',
+      rating: 5,
+      content: 'Eternals Studio completely redefined our competitive gaming identity. The custom mascot logo, 3D broadcast overlays, and animation sequences elevated our organization to partner tier within 3 months.'
+    },
+    {
+      id: 'rev-2',
+      author: 'Elena Rostova',
+      role: 'Creative Director',
+      company: 'Horizon Web Labs',
+      rating: 5,
+      content: 'The website templates and custom Next.js web application they delivered scored a 99+ on Google Lighthouse. Incredible code quality, seamless Stripe checkout, and ultra-responsive layout.'
+    },
+    {
+      id: 'rev-3',
+      author: 'David Kim',
+      role: 'Executive Producer',
+      company: 'Nexus Media Group',
+      rating: 5,
+      content: 'Hands down the most polished 3D asset models and LUT grading presets we have ever integrated. Clean topology, 4K PBR textures, and immediate source file delivery in the portal.'
+    },
+    {
+      id: 'rev-4',
+      author: 'Sarah Jenkins',
+      role: 'Operations Lead',
+      company: 'Vanguard Gaming Org',
+      rating: 5,
+      content: 'Unmatched turnaround time and transparency. Being able to toggle between personal and organization projects while tracking weekly milestones made working with Eternals Studio effortless.'
+    }
+  ],
   sections: {
     showStoreGrid: true,
     showPortfolioShowcase: true,
     showServicesGrid: true,
     showTeamSection: true,
+    showReviewsSection: true,
     showCtaBanner: true,
     ctaBannerTitle: 'Ready to elevate your digital presence?',
     ctaBannerDescription: 'Collaborate with our team of elite designers and developers to bring your vision to life.',

@@ -99,6 +99,12 @@ export default function AdminDashboard() {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Message Reply & Filter State
+  const [messageFilter, setMessageFilter] = useState<'all' | 'unread' | 'read' | 'replied'>('all');
+  const [replyingMessage, setReplyingMessage] = useState<Message | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
   // Deployment Simulation State
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployProgress, setDeployProgress] = useState(0);
@@ -223,6 +229,52 @@ export default function AdminDashboard() {
   }
 
   const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+
+  // Support message actions
+  const handleUpdateMessageStatus = async (msgId: string, newStatus: string) => {
+    setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: newStatus } : m));
+    try {
+      await fetch('/api/admin/messages', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: msgId, status: newStatus }),
+      });
+    } catch (e) {
+      console.warn('Failed to update message status:', e);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyingMessage || !replyText.trim()) return;
+    setSendingReply(true);
+    try {
+      const res = await fetch('/api/admin/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: replyingMessage.id,
+          toEmail: replyingMessage.email,
+          toName: replyingMessage.name,
+          subject: replyingMessage.subject,
+          replyMessage: replyText,
+        }),
+      });
+
+      if (res.ok) {
+        alert(`Reply sent to ${replyingMessage.email}!`);
+        handleUpdateMessageStatus(replyingMessage.id, 'replied');
+        setReplyingMessage(null);
+        setReplyText('');
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to send reply');
+      }
+    } catch (err: any) {
+      alert('Error sending reply: ' + err.message);
+    } finally {
+      setSendingReply(false);
+    }
+  };
 
   // Webhook and deploy logging handler
   const triggerDeployStep = async (step: 'initiated' | 'building' | 'success' | 'failed') => {
@@ -473,21 +525,197 @@ export default function AdminDashboard() {
             )}
             {activeTab === 'messages' && (
               <div className="flex flex-col gap-6">
-                {messages.map((msg) => (
-                  <div key={msg.id} className="border-b border-slate-100 dark:border-slate-800 last:border-0 pb-6 last:pb-0 flex gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 mt-1">
-                      <Mail size={18} />
-                    </div>
-                    <div className="flex flex-col gap-1.5 w-full">
-                      <div className="flex items-center justify-between gap-4">
-                        <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">{msg.subject}</h3>
-                        <span className="text-xs text-slate-400 font-semibold">{new Date(msg.created_at).toLocaleDateString()}</span>
+                {/* Messages Filter & Stats */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <div className="flex flex-col">
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">Client Support Inbox</h3>
+                    <p className="text-xs text-slate-500">Review incoming customer messages, toggle read status, and send email replies directly.</p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
+                    {(['all', 'unread', 'read', 'replied'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setMessageFilter(filter)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                          messageFilter === filter
+                            ? 'bg-white dark:bg-slate-900 text-teal-600 dark:text-teal-400 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Messages List */}
+                {messages.filter((m) => messageFilter === 'all' ? true : m.status === messageFilter).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                    <Mail size={36} className="text-slate-300 dark:text-slate-700" />
+                    <span className="text-slate-500 dark:text-slate-400 font-bold text-sm">No messages found in this category</span>
+                    <span className="text-xs text-slate-400">Inquiries submitted on the contact form will appear here.</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {messages
+                      .filter((m) => messageFilter === 'all' ? true : m.status === messageFilter)
+                      .map((msg) => (
+                        <div
+                          key={msg.id}
+                          className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/40 dark:bg-slate-950/20 flex flex-col gap-4 transition-all"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <div className="h-9 w-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                <Mail size={16} />
+                              </div>
+                              <div className="flex flex-col">
+                                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">{msg.subject}</h3>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+                                  <span>From: <strong>{msg.name}</strong></span>
+                                  <span>&bull;</span>
+                                  <a href={`mailto:${msg.email}?subject=Re: ${encodeURIComponent(msg.subject)}`} className="text-teal-600 dark:text-teal-400 hover:underline">
+                                    {msg.email}
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                                msg.status === 'unread'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                  : msg.status === 'replied'
+                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                    : 'bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300/40 dark:border-slate-700/40'
+                              }`}>
+                                {msg.status || 'unread'}
+                              </span>
+                              <span className="text-xs text-slate-400 font-semibold">
+                                {new Date(msg.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Message Body */}
+                          <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 text-xs leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                            {msg.message}
+                          </div>
+
+                          {/* Action Toolbar */}
+                          <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-100 dark:border-slate-800/60 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setReplyingMessage(msg)}
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+                              >
+                                <Mail size={12} />
+                                <span>Reply via Email</span>
+                              </button>
+
+                              <a
+                                href={`mailto:${msg.email}?subject=Re: ${encodeURIComponent(msg.subject)}`}
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer"
+                              >
+                                <span>Open Mail Client</span>
+                              </a>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {msg.status !== 'read' && (
+                                <button
+                                  onClick={() => handleUpdateMessageStatus(msg.id, 'read')}
+                                  className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                >
+                                  Mark as Read
+                                </button>
+                              )}
+                              {msg.status === 'read' && (
+                                <button
+                                  onClick={() => handleUpdateMessageStatus(msg.id, 'unread')}
+                                  className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                >
+                                  Mark as Unread
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {/* Reply Modal */}
+                {replyingMessage && (
+                  <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div className="flex flex-col">
+                          <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                            Reply to {replyingMessage.name}
+                          </h3>
+                          <span className="text-xs text-slate-500">Recipient: {replyingMessage.email}</span>
+                        </div>
+                        <button
+                          onClick={() => setReplyingMessage(null)}
+                          className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <XCircle size={18} />
+                        </button>
                       </div>
-                      <p className="text-xs font-bold text-slate-400 dark:text-slate-500">From: {msg.name} ({msg.email})</p>
-                      <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 mt-2 bg-slate-50/50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-200/20 dark:border-slate-800/20">{msg.message}</p>
+
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-bold text-slate-500">Subject:</span>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`Re: ${replyingMessage.subject}`}
+                          className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-600 dark:text-slate-300"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-bold text-slate-500">Your Response Message:</span>
+                        <textarea
+                          rows={6}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your reply message here..."
+                          className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-xs focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 resize-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setReplyingMessage(null)}
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={sendingReply || !replyText.trim()}
+                          onClick={handleSendReply}
+                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-extrabold transition-all shadow-md cursor-pointer disabled:opacity-50"
+                        >
+                          {sendingReply ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              <span>Sending Email...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail size={14} />
+                              <span>Send Email Reply</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
             {activeTab === 'logs' && (

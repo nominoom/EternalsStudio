@@ -5,7 +5,7 @@ import Script from "next/script";
 export default function TawkWidget() {
   return (
     <>
-      <div id="tawk_6a83c98f273ff73441178fb6" />
+      <div id="tawk_6a83c98f273ff73441178fb6" className="fixed bottom-4 right-4 z-[99999]" />
       <Script id="tawk-init" strategy="afterInteractive">
         {`
           var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();

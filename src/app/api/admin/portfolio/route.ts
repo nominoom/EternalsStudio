@@ -18,31 +18,47 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // 3. Parse and validate body
-    const { title, subtitle, category, description, tags, image_url } = await req.json();
+    const { title, subtitle, category, description, tags, image_url, file_url, file_name } = await req.json();
 
     if (!title || !category || !subtitle || !description) {
       return NextResponse.json({ error: 'Missing required fields: title, category, subtitle, or description' }, { status: 400 }) as unknown as Response;
     }
 
     // 4. Insert into Supabase Table
-    const { data: project, error: dbError } = await supabaseAdmin
+    const basePayload: any = {
+      title,
+      subtitle,
+      category,
+      description,
+      tags: tags || [],
+      image_url: image_url || '',
+      badges: ['Client']
+    };
+
+    let project: any = null;
+
+    // Try inserting with file_url
+    const fullPayload = { ...basePayload, file_url: file_url || null, file_name: file_name || null };
+    const { data: fullData, error: fullError } = await supabaseAdmin
       .from('portfolio')
-      .insert([
-        {
-          title,
-          subtitle,
-          category,
-          description,
-          tags: tags || [],
-          image_url: image_url || '',
-          badges: ['Client']
-        }
-      ])
+      .insert([fullPayload])
       .select()
       .single();
 
-    if (dbError) {
-      throw dbError;
+    if (!fullError && fullData) {
+      project = fullData;
+    } else {
+      // Fallback without file_url column if schema does not have it
+      const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+        .from('portfolio')
+        .insert([basePayload])
+        .select()
+        .single();
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+      project = { ...fallbackData, file_url, file_name };
     }
 
     // 5. Log audit event

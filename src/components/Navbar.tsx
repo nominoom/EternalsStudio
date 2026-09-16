@@ -19,11 +19,10 @@ export default function Navbar() {
   const { hasAdminPrivileges, toggleAdminSidebar } = useAdmin();
   const { siteContent } = useSiteContent();
 
-  // Load theme preference on mount
+  // Load theme preference on mount - defaults to LIGHT mode unless explicitly saved as dark
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const initialTheme = savedTheme || systemTheme;
+    const initialTheme = savedTheme || 'light';
 
     setTheme(initialTheme);
     if (initialTheme === 'dark') {
@@ -53,6 +52,7 @@ export default function Navbar() {
     { name: 'Services', path: '/services' },
     { name: 'Portfolio', path: '/portfolio' },
     { name: 'Store', path: '/store' },
+    { name: 'Partners', path: '/partners' },
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -74,14 +74,22 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 sm:px-8">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50">
-            <span className="text-teal-500 text-2xl font-bold">◆</span>
-            <span>{siteContent.branding.siteName}</span>
+          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50 group">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-teal-400 via-teal-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 12L12 22L22 12L12 2Z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="12" r="3.5" fill="white" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <span className="leading-tight">{siteContent.branding.siteName}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-teal-600 dark:text-teal-400">Creative Studio</span>
+            </div>
           </Link>
 
           {/* Navigation Links (Desktop) */}
           <nav className="hidden md:block">
-            <ul className="flex items-center gap-8">
+            <ul className="flex items-center gap-7">
               {navLinks.map((link) => {
                 const isActive = pathname === link.path;
                 return (
@@ -89,7 +97,7 @@ export default function Navbar() {
                     <Link
                       href={link.path}
                       className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${isActive
-                          ? 'text-teal-500 dark:text-teal-400'
+                          ? 'text-teal-500 dark:text-teal-400 font-bold'
                           : 'text-slate-600 dark:text-slate-400'
                         }`}
                     >

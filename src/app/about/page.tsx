@@ -98,23 +98,42 @@ export default function About() {
               </div>
             )}
           </div>
-          <div className="h-64 sm:h-96 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-8 shadow-sm">
-            {/* Mission Illustration (Vector monograms logo text) */}
-            <div className="text-center flex flex-col gap-4 font-black">
-              <span className="text-5xl sm:text-7xl bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent tracking-widest font-extrabold uppercase">
-                <EditableText
-                  value={siteContent.branding.siteName}
-                  label="Studio Brand Name"
-                  onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, siteName: val } })}
-                />
-              </span>
-              <span className="text-sm uppercase tracking-[0.4em] text-slate-400 dark:text-slate-500 font-bold">
-                <EditableText
-                  value={siteContent.branding.logoSubtitle}
-                  label="Studio Logo Subtitle"
-                  onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, logoSubtitle: val } })}
-                />
-              </span>
+          <div className="h-auto min-h-[22rem] sm:min-h-[24rem] rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-b from-white via-slate-50 to-teal-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-teal-950/20 flex flex-col items-center justify-center p-8 shadow-sm relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Eternals Studio Official Emblem & Vector Brand Mark */}
+            <div className="relative flex flex-col items-center justify-center gap-5 text-center z-10">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute -inset-4 bg-gradient-to-r from-teal-500/20 to-indigo-500/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-teal-500/40 p-5 shadow-2xl flex items-center justify-center">
+                  <svg viewBox="0 0 100 100" className="w-full h-full text-teal-400 fill-none stroke-current" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="50 8, 88 28, 88 72, 50 92, 12 72, 12 28" className="stroke-teal-400" />
+                    <path d="M50 8 L50 92" className="stroke-indigo-400/60" strokeDasharray="4 4" />
+                    <circle cx="50" cy="50" r="14" className="fill-teal-400/20 stroke-teal-300" strokeWidth="4" />
+                    <path d="M36 50 L64 50" className="stroke-white" strokeWidth="5" />
+                    <path d="M43 38 L57 62" className="stroke-teal-300" strokeWidth="4" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="text-center flex flex-col gap-2 font-black">
+                <span className="text-3xl sm:text-5xl bg-gradient-to-r from-teal-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-widest font-extrabold uppercase">
+                  <EditableText
+                    value={siteContent.branding.siteName}
+                    label="Studio Brand Name"
+                    onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, siteName: val } })}
+                  />
+                </span>
+                <span className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 font-bold">
+                  <EditableText
+                    value={siteContent.branding.logoSubtitle}
+                    label="Studio Logo Subtitle"
+                    onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, logoSubtitle: val } })}
+                  />
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -132,7 +151,7 @@ export default function About() {
             {expertise.map((exp, i) => (
               <div
                 key={i}
-                className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md rounded-2xl p-6 flex flex-col gap-2.5 shadow-sm"
+                className="bg-white/60 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md rounded-2xl p-6 flex flex-col gap-2.5 shadow-sm hover:border-teal-500/40 transition-colors"
               >
                 <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
                   <span className="text-teal-500 text-lg">✔</span>
@@ -150,7 +169,11 @@ export default function About() {
         {siteContent.sections.showTeamSection && (
           <section className="mx-auto max-w-7xl relative z-10">
             <div className="text-center max-w-2xl mx-auto flex flex-col gap-3 mb-12">
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">Meet Our Team</h2>
+              <div className="inline-flex items-center gap-2 self-center px-3.5 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-semibold tracking-wide uppercase">
+                <Users size={14} />
+                The Core Collective
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">Meet Our Team</h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 The creative designers, software engineers, and digital artists driving the success of {siteContent.branding.siteName}.
               </p>
@@ -160,30 +183,78 @@ export default function About() {
               {siteContent.team.map((member) => (
                 <div
                   key={member.id}
-                  className="group bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 hover:border-teal-500/40 backdrop-blur-md rounded-2xl p-6 flex flex-col items-center text-center gap-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="group bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800/60 hover:border-teal-500/50 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between gap-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-teal-500/5"
                 >
-                  <EditableImage
-                    src={member.avatarUrl || ''}
-                    alt={member.name}
-                    label={`${member.name} Avatar / Logo`}
-                    placeholderText="Click to upload team avatar photo or logo"
-                    onChange={(url) => updateTeamMember(member.id, { avatarUrl: url })}
-                    className="h-20 w-20 rounded-full object-cover shadow-md transition-transform duration-300 group-hover:scale-110"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors">
-                      <EditableText
-                        value={member.name}
-                        label="Team Member Name"
-                        onChange={(val) => updateTeamMember(member.id, { name: val })}
-                      />
-                    </h3>
-                    <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                      <EditableText
-                        value={member.role}
-                        label="Team Member Role"
-                        onChange={(val) => updateTeamMember(member.id, { role: val })}
-                      />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="relative">
+                        {member.avatarUrl ? (
+                          <EditableImage
+                            src={member.avatarUrl}
+                            alt={member.name}
+                            label={`${member.name} Avatar`}
+                            placeholderText="Click to change avatar"
+                            onChange={(url) => updateTeamMember(member.id, { avatarUrl: url })}
+                            className="h-16 w-16 rounded-2xl object-cover shadow-md border-2 border-teal-500/40 transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className={`h-16 w-16 rounded-2xl ${member.color || 'bg-teal-500'} text-white font-extrabold text-2xl flex items-center justify-center shadow-md shadow-teal-500/20 transition-transform duration-300 group-hover:scale-105`}>
+                            {member.initial || member.name.charAt(0)}
+                          </div>
+                        )}
+                        <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 shadow-xs" title="Active in Studio" />
+                      </div>
+
+                      <div className="flex flex-col items-end">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">
+                          Active
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 group-hover:text-teal-500 dark:group-hover:text-teal-400 transition-colors">
+                        <EditableText
+                          value={member.name}
+                          label="Team Member Name"
+                          onChange={(val) => updateTeamMember(member.id, { name: val })}
+                        />
+                      </h3>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <EditableText
+                          value={member.role}
+                          label="Team Member Role"
+                          onChange={(val) => updateTeamMember(member.id, { role: val })}
+                        />
+                      </span>
+                    </div>
+
+                    {member.bio && (
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {member.bio}
+                      </p>
+                    )}
+
+                    {member.specialties && member.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {member.specialties.map((spec, sIdx) => (
+                          <span
+                            key={sIdx}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50"
+                          >
+                            {spec}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-mono text-[11px] text-teal-600 dark:text-teal-400">
+                      {member.discord ? `@${member.discord}` : 'Eternals Core'}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Weekly Payout Partner
                     </span>
                   </div>
                 </div>

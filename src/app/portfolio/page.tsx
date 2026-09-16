@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { ArrowRight, Trash2, X } from 'lucide-react';
+import { ArrowRight, Trash2, X, Download, FileText } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { supabase } from '../../lib/supabase';
 
@@ -18,6 +18,8 @@ interface Project {
   badges: string[];
   svg?: React.ReactNode;
   image_url?: string;
+  file_url?: string;
+  file_name?: string;
   is_custom?: boolean;
 }
 
@@ -615,6 +617,38 @@ export default function Portfolio() {
                     </span>
                   ))}
                 </div>
+              </div>
+
+              {/* Project Deliverables / Download Section */}
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  Project Assets & Deliverables
+                </h4>
+                {selectedProject.file_url ? (
+                  <a
+                    href={selectedProject.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={selectedProject.file_name || `${selectedProject.title.toLowerCase().replace(/\s+/g, '-')}-assets`}
+                    className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-600 dark:text-teal-400 text-xs font-bold transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText size={16} />
+                      <span className="truncate">{selectedProject.file_name || 'Download Project Source Assets'}</span>
+                    </div>
+                    <Download size={14} className="group-hover:translate-y-0.5 transition-transform flex-shrink-0" />
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/50 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="text-[11px]">Deliverables archived in client private repository</span>
+                    <Link
+                      href="/contact"
+                      className="text-[10px] font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                    >
+                      Request Assets
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -10,14 +10,8 @@ import { ShoppingCart, Tag, Sparkles, CheckCircle2, Trash2 } from 'lucide-react'
 import { useCart } from '../../context/CartContext';
 import { useAdmin } from '../../context/AdminContext';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image_url?: string;
-}
+import { Product, FALLBACK_PRODUCTS, isProductSoldOut } from '../../lib/catalog';
+import Link from 'next/link';
 
 export default function Store() {
   return (
@@ -40,17 +34,7 @@ function StoreContent() {
   const { cart, addToCart, removeFromCart, clearCart, checkoutLoading, handleCheckout } = useCart();
   const { isAdminMode, catalogVersion, triggerCatalogRefresh } = useAdmin();
 
-  const fallbackProducts: Product[] = [
-    { id: '1', name: 'Website Template Pack', description: 'Modern, responsive website templates built with React and Tailwind.', price: 49.99, category: 'templates' },
-    { id: '2', name: 'Logo Design Bundle', description: '50+ premium vector brand and esports logo assets.', price: 29.99, category: 'graphics' },
-    { id: '3', name: '3D Model Collection', description: 'High-quality 3D assets for digital renders and overlays.', price: 79.99, category: 'assets' },
-    { id: '4', name: 'Color Grading Presets', description: 'Professional LUT presets for film and video grading editors.', price: 19.99, category: 'presets' },
-    { id: '5', name: 'Social Media Templates', description: 'Instagram grid layouts, YouTube headers, and Twitter templates.', price: 24.99, category: 'templates' },
-    { id: '6', name: 'Icon Pack Collection', description: '1000+ custom vector icons designed for UI designers.', price: 24.99, category: 'graphics' },
-    { id: '7', name: 'Test Product ($1)', description: 'A test product for verifying checkout configuration.', price: 1.00, category: 'presets' },
-  ];
-
-  // Fetch products from database, fall back if credentials are dummy
+  // Fetch products from database, fall back to rich catalog items
   useEffect(() => {
     async function getProducts() {
       const localCustom = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('localCustomProducts') || '[]') : [];
@@ -60,15 +44,22 @@ function StoreContent() {
         const { data, error } = await supabase.from('products').select('*');
         if (error) throw error;
         if (data && data.length > 0) {
-          const combined = [...data, ...localCustom];
+          // Merge database items with fallback products so all detailed graphics exist
+          const merged = [...data];
+          FALLBACK_PRODUCTS.forEach(fb => {
+            if (!merged.some(p => p.id === fb.id || p.name === fb.name)) {
+              merged.push(fb);
+            }
+          });
+          const combined = [...merged, ...localCustom];
           setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
         } else {
-          const combined = [...fallbackProducts, ...localCustom];
+          const combined = [...FALLBACK_PRODUCTS, ...localCustom];
           setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
         }
       } catch (err) {
         console.log('Using local fallback products due to connection limits');
-        const combined = [...fallbackProducts, ...localCustom];
+        const combined = [...FALLBACK_PRODUCTS, ...localCustom];
         setProducts(combined.filter((p: Product) => !deletedIds.includes(p.id)));
       }
     }
@@ -187,52 +178,107 @@ function StoreContent() {
 
         {/* Catalog Grid */}
         <section className="mx-auto max-w-7xl relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map((prod) => (
-            <div
-              key={prod.id}
-              className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-            >
-              {/* Visual Cover placeholder */}
-              <div className="aspect-[5/3] w-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 flex items-center justify-center relative">
-                <Sparkles size={40} className="text-teal-500/40" />
-                <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-wider bg-teal-500 text-white px-2.5 py-1 rounded-md">
-                  {prod.category}
-                </span>
-              </div>
-
-              {/* Details */}
-              <div className="p-6 flex flex-col gap-3">
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 group-hover:text-teal-500 transition-colors">
-                  {prod.name}
-                </h3>
-                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 min-h-[36px]">
-                  {prod.description}
-                </p>
-                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
-                  <span className="font-extrabold text-base text-slate-800 dark:text-slate-200">
-                    ${prod.price.toFixed(2)}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {isAdminMode && (
-                      <button
-                        onClick={() => handleDeleteProduct(prod)}
-                        className="bg-red-500/15 border border-red-500/30 text-red-500 hover:bg-red-500/25 p-2 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Product"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+          {filteredProducts.map((prod) => {
+            const isSold = prod.is_sold || isProductSoldOut(prod.id);
+            return (
+              <div
+                key={prod.id}
+                className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
+              >
+                <div>
+                  {/* Visual Cover: Render image if present, otherwise gradient fallback */}
+                  <Link href={`/store/${prod.id}`} className="block relative aspect-[5/3] w-full bg-slate-100 dark:bg-slate-800 overflow-hidden cursor-pointer">
+                    {prod.image_url ? (
+                      <img
+                        src={prod.image_url}
+                        alt={prod.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+                        <Sparkles size={40} className="text-teal-500/40" />
+                      </div>
                     )}
-                    <button
-                      onClick={() => addToCart(prod)}
-                      className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Add to Cart
-                    </button>
+
+                    {/* Category Badge */}
+                    <span className="absolute top-3 right-3 text-[10px] font-black uppercase tracking-wider bg-teal-500 text-white px-2.5 py-1 rounded-md shadow-sm">
+                      {prod.category}
+                    </span>
+
+                    {/* Exclusive 1-of-1 Badge */}
+                    {prod.is_exclusive && (
+                      <span className={`absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-sm ${
+                        isSold 
+                          ? 'bg-rose-500 text-white' 
+                          : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black'
+                      }`}>
+                        {isSold ? 'SOLD OUT' : '1-OF-1 EXCLUSIVE'}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Details */}
+                  <div className="p-5 flex flex-col gap-2">
+                    <Link href={`/store/${prod.id}`}>
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 group-hover:text-teal-500 transition-colors line-clamp-1">
+                        {prod.name}
+                      </h3>
+                    </Link>
+                    <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[34px]">
+                      {prod.description}
+                    </p>
+                    
+                    <div className="pt-2">
+                      <Link
+                        href={`/store/${prod.id}`}
+                        className="text-[11px] font-bold text-teal-600 dark:text-teal-400 hover:underline inline-flex items-center gap-1"
+                      >
+                        <span>View Specs & Showcase</span>
+                        <span>&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer action bar */}
+                <div className="p-5 pt-0">
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Price</span>
+                      <span className="font-extrabold text-base text-slate-800 dark:text-slate-200">
+                        ${prod.price.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isAdminMode && (
+                        <button
+                          onClick={() => handleDeleteProduct(prod)}
+                          className="bg-red-500/15 border border-red-500/30 text-red-500 hover:bg-red-500/25 p-2 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Product"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+
+                      {isSold ? (
+                        <span className="bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold px-3 py-2 rounded-lg cursor-not-allowed">
+                          Sold Out
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => addToCart(prod)}
+                          className="bg-teal-500 hover:bg-teal-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition-all cursor-pointer shadow-xs"
+                        >
+                          Add to Cart
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
       </main>
 

@@ -14,8 +14,13 @@ export default function Footer() {
 
         {/* Column 1: Brand Info */}
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 font-extrabold text-lg text-slate-900 dark:text-slate-50">
-            <span className="text-teal-500 font-bold">◆</span>
+          <div className="flex items-center gap-2.5 font-extrabold text-lg text-slate-900 dark:text-slate-50">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-teal-400 to-indigo-600 flex items-center justify-center text-white shadow-xs">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 12L12 22L22 12L12 2Z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="12" r="3.5" fill="white" />
+              </svg>
+            </div>
             <span>{siteContent.branding.siteName}</span>
           </div>
           <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
@@ -59,6 +64,7 @@ export default function Footer() {
             <li><Link href="/about" className="hover:text-teal-500 transition-all">About Us</Link></li>
             <li><Link href="/portfolio" className="hover:text-teal-500 transition-all">Our Portfolio</Link></li>
             <li><Link href="/store" className="hover:text-teal-500 transition-all">Shop Store</Link></li>
+            <li><Link href="/partners" className="hover:text-teal-500 transition-all font-semibold text-teal-600 dark:text-teal-400">Partnership & Loyalty</Link></li>
             <li><Link href="/contact" className="hover:text-teal-500 transition-all">Contact Us</Link></li>
             <li><Link href="/about" className="hover:text-teal-500 transition-all">Meet The Team</Link></li>
           </ul>

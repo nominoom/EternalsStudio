@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import EditableText from '../components/EditableText';
 import EditableImage from '../components/EditableImage';
 import { useSiteContent } from '../context/SiteContentContext';
-import { ArrowRight, Terminal, Palette, Box, Video, Sparkles } from 'lucide-react';
+import { ArrowRight, Terminal, Palette, Box, Video, Sparkles, Star } from 'lucide-react';
 
 export default function Home() {
   const { siteContent, updateSiteContent, updateStat } = useSiteContent();
@@ -223,6 +223,58 @@ export default function Home() {
                   <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                     {svc.description}
                   </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Reviews Section */}
+        {siteContent.sections.showReviewsSection && siteContent.reviews && siteContent.reviews.length > 0 && (
+          <section className="mx-auto max-w-7xl relative z-10 py-16 flex flex-col gap-12">
+            <div className="text-center max-w-2xl mx-auto flex flex-col gap-3">
+              <div className="inline-flex items-center gap-2 self-center px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-wide uppercase">
+                <Star size={14} className="fill-amber-500 text-amber-500" />
+                Verified Client Reviews
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
+                Trusted by Esports Clans & Digital Brands
+              </h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                See what founders, creative directors, and creators say about partnering with Eternals Studio.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {siteContent.reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between gap-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-teal-500/40"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {[...Array(rev.rating || 5)].map((_, i) => (
+                        <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 italic">
+                      "{rev.content}"
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
+                      {rev.author.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+                        {rev.author}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {rev.role} • <span className="text-teal-600 dark:text-teal-400 font-medium">{rev.company}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

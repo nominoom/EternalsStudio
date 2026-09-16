@@ -13,15 +13,18 @@ import {
   AlertTriangle, 
   ExternalLink, 
   HelpCircle,
-  Play,
-  FileText,
-  XCircle,
-  X,
-  Upload,
-  Building2,
-  User,
-  Paperclip,
-  Loader2
+  Play, 
+  FileText, 
+  XCircle, 
+  X, 
+  Upload, 
+  Building2, 
+  User, 
+  Paperclip, 
+  Loader2,
+  Trash2,
+  ShoppingBag,
+  Download
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -34,6 +37,24 @@ interface Attachment {
   uploaded_at: string;
   uploaded_by_email?: string;
   uploaded_by_name?: string;
+}
+
+interface ClientOrderItem {
+  id: string;
+  product_name: string;
+  price: number;
+}
+
+export interface ClientOrder {
+  id: string;
+  user_email: string;
+  total_amount: number;
+  status: string;
+  scope_type?: 'personal' | 'organization';
+  organization_name?: string;
+  attachments?: Attachment[];
+  items?: ClientOrderItem[];
+  created_at: string;
 }
 
 interface ProjectRequest {
@@ -59,9 +80,11 @@ interface ProjectRequest {
 export default function ClientPortal() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
+  const [orders, setOrders] = useState<ClientOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [scopeFilter, setScopeFilter] = useState<'all' | 'personal' | 'organization'>('all');
+  const [portalTab, setPortalTab] = useState<'all' | 'requests' | 'orders'>('all');
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   // Helper to fetch and merge client requests
@@ -96,15 +119,53 @@ export default function ClientPortal() {
       ? JSON.parse(localStorage.getItem('cancelledRequestIds') || '[]')
       : [];
 
+    const clientDeletedIds = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('clientDeletedRequestIds') || '[]')
+      : [];
+
+    const allExcludedIds = [...cancelledIds, ...clientDeletedIds];
+
     const activeDbRequests = dbRequests.filter(
-      (r) => r.status !== 'cancelled' && !r.deleted_at && !cancelledIds.includes(r.id)
+      (r) => r.status !== 'cancelled' && !r.deleted_at && !allExcludedIds.includes(r.id)
     );
 
     const activeLocalRequests = localRequests.filter(
-      (lr: any) => lr.status !== 'cancelled' && !lr.deleted_at && !cancelledIds.includes(lr.id) && !dbRequests.some((dr: any) => dr.id === lr.id)
+      (lr: any) => lr.status !== 'cancelled' && !lr.deleted_at && !allExcludedIds.includes(lr.id) && !dbRequests.some((dr: any) => dr.id === lr.id)
     );
 
     setRequests([...activeDbRequests, ...activeLocalRequests]);
+
+    // Fetch customer store purchases
+    let dbOrders: ClientOrder[] = [];
+    try {
+      const { data: ords, error: ordErr } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('user_email', email)
+        .order('created_at', { ascending: false });
+
+      if (!ordErr && ords && ords.length > 0) {
+        dbOrders = ords.map((o: any) => ({
+          ...o,
+          items: o.order_items || [],
+        }));
+      }
+    } catch (err) {
+      console.warn('[ClientPortal] Failed to query live database orders:', err);
+    }
+
+    const localOrders = typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('localCustomOrders') || '[]')
+      : [];
+
+    const mergedOrders = [...dbOrders];
+    localOrders.forEach((lo: any) => {
+      if (!mergedOrders.some((mo) => mo.id === lo.id)) {
+        mergedOrders.push(lo);
+      }
+    });
+
+    setOrders(mergedOrders);
     setLoading(false);
   }
 
@@ -301,14 +362,14 @@ export default function ClientPortal() {
     );
   };
 
-  const handleFileUpload = async (requestId: string, file: File) => {
+  const handleFileUpload = async (targetId: string, file: File, isOrder: boolean = false) => {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       alert('File size exceeds 10MB limit.');
       return;
     }
 
-    setUploadingId(requestId);
+    setUploadingId(targetId);
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -318,7 +379,8 @@ export default function ClientPortal() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            requestId,
+            requestId: !isOrder ? targetId : undefined,
+            orderId: isOrder ? targetId : undefined,
             fileName: file.name,
             fileData,
             fileSize: file.size,
@@ -328,16 +390,28 @@ export default function ClientPortal() {
 
         const data = await response.json();
         if (response.ok && data.attachment) {
-          setRequests((prev) =>
-            prev.map((req) => {
-              if (req.id === requestId) {
-                const existing = req.attachments || [];
-                return { ...req, attachments: [data.attachment, ...existing] };
-              }
-              return req;
-            })
-          );
-          alert(`File "${file.name}" uploaded successfully to your portal!`);
+          if (!isOrder) {
+            setRequests((prev) =>
+              prev.map((req) => {
+                if (req.id === targetId) {
+                  const existing = req.attachments || [];
+                  return { ...req, attachments: [data.attachment, ...existing] };
+                }
+                return req;
+              })
+            );
+          } else {
+            setOrders((prev) =>
+              prev.map((ord) => {
+                if (ord.id === targetId) {
+                  const existing = ord.attachments || [];
+                  return { ...ord, attachments: [data.attachment, ...existing] };
+                }
+                return ord;
+              })
+            );
+          }
+          alert(`File "${file.name}" uploaded and attached successfully to your portal!`);
         } else {
           alert(data.error || 'Failed to upload file');
         }
@@ -612,52 +686,47 @@ export default function ClientPortal() {
                         </div>
                       )}
 
-                      {/* Cancellation Button */}
-                      {(req.status === 'pending' || req.status === 'awaiting_payment') && (
+                      {/* Delete Request Action */}
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
                         <button
                           onClick={async () => {
-                            if (!confirm('Are you sure you want to cancel this project request? It will be removed from your portal.')) return;
+                            if (!confirm(`Are you sure you want to delete and remove request "${req.subject}" from your portal?`)) return;
                             try {
                               const email = user?.emailAddresses?.[0]?.emailAddress;
                               
                               // 1. Instantly remove from local UI state
                               setRequests((prev) => prev.filter((r) => r.id !== req.id));
 
-                              // 2. Persist in cancelledRequestIds in localStorage
-                              const cancelled = JSON.parse(localStorage.getItem('cancelledRequestIds') || '[]');
-                              if (!cancelled.includes(req.id)) {
-                                localStorage.setItem('cancelledRequestIds', JSON.stringify([...cancelled, req.id]));
+                              // 2. Persist in clientDeletedRequestIds in localStorage
+                              const clientDeleted = JSON.parse(localStorage.getItem('clientDeletedRequestIds') || '[]');
+                              if (!clientDeleted.includes(req.id)) {
+                                localStorage.setItem('clientDeletedRequestIds', JSON.stringify([...clientDeleted, req.id]));
                               }
 
-                              // 3. Remove from localCustomRequests
+                              // 3. Clean local storage custom requests
                               const localCustom = JSON.parse(localStorage.getItem('localCustomRequests') || '[]');
                               const updatedLocal = localCustom.filter((r: any) => r.id !== req.id);
                               localStorage.setItem('localCustomRequests', JSON.stringify(updatedLocal));
 
-                              // 4. Send cancellation request to backend API
-                              const res = await fetch('/api/requests/cancel', {
+                              // 4. Send API deletion request
+                              await fetch('/api/requests/delete', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ requestId: req.id }),
                               });
-                              const data = await res.json();
-                              if (res.ok && data.success) {
-                                alert('Project request cancelled and removed successfully.');
-                              } else {
-                                alert('Project request removed from your portal.');
-                              }
 
+                              alert('Project request deleted from your dashboard.');
                               if (email) fetchRequests(email);
                             } catch (e: any) {
-                              alert('Project request removed from your portal.');
+                              alert('Project request removed from your dashboard.');
                             }
                           }}
-                          className="bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-2 rounded-xl text-[10px] font-bold tracking-tight transition-all w-fit cursor-pointer flex items-center gap-1 mt-2"
+                          className="bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all w-fit cursor-pointer flex items-center gap-1.5"
                         >
-                          <X size={10} />
-                          <span>Cancel Request</span>
+                          <Trash2 size={12} />
+                          <span>Delete Request</span>
                         </button>
-                      )}
+                      </div>
 
                       {/* Visual Steps */}
                       {renderPipeline(req.status)}
@@ -665,6 +734,192 @@ export default function ClientPortal() {
                   ))}
                 </div>
               )}
+
+              {/* Store Purchases & Digital Deliverables Section */}
+              <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <ShoppingBag size={20} className="text-teal-500" />
+                      <span>Store Purchases & Digital Deliverables ({orders.length})</span>
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Your acquired digital assets, templates, source archives, and attached briefs.
+                    </p>
+                  </div>
+                </div>
+
+                {orders.filter((ord) => {
+                  if (scopeFilter === 'personal') return ord.scope_type !== 'organization';
+                  if (scopeFilter === 'organization') return ord.scope_type === 'organization';
+                  return true;
+                }).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center gap-3 bg-slate-50/50 dark:bg-slate-950/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                    <ShoppingBag size={36} className="text-slate-350 dark:text-slate-650" />
+                    <div>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">No store purchases found</span>
+                      <span className="text-xs text-slate-400 block mt-0.5">Templates or asset bundles you purchase from our Studio Store will appear here.</span>
+                    </div>
+                    <Link
+                      href="/store"
+                      className="mt-1 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold px-4 py-2 transition-all shadow-xs"
+                    >
+                      Browse Studio Store
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {orders
+                      .filter((ord) => {
+                        if (scopeFilter === 'personal') return ord.scope_type !== 'organization';
+                        if (scopeFilter === 'organization') return ord.scope_type === 'organization';
+                        return true;
+                      })
+                      .map((ord) => (
+                        <div
+                          key={ord.id}
+                          className="border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-6 bg-slate-50/20 dark:bg-slate-950/20 flex flex-col gap-4 transition-all"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60 pb-3">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="font-mono text-xs font-black text-slate-700 dark:text-slate-300">
+                                Order #{ord.id.substring(0, 8)}
+                              </span>
+
+                              {ord.scope_type === 'organization' ? (
+                                <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-2.5 py-0.5 rounded-full">
+                                  <Building2 size={10} />
+                                  <span>Org: {ord.organization_name || 'Organization'}</span>
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/40 px-2.5 py-0.5 rounded-full">
+                                  <User size={10} />
+                                  <span>Personal</span>
+                                </span>
+                              )}
+
+                              <span className="text-[10px] text-slate-400">
+                                {new Date(ord.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <CheckCircle2 size={12} />
+                                <span>Completed & Paid</span>
+                              </span>
+                              <span className="text-sm font-black text-slate-800 dark:text-slate-200">
+                                ${Number(ord.total_amount).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Order items list */}
+                          <div className="flex flex-col gap-2">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Purchased Items:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {ord.items && ord.items.length > 0 ? (
+                                ord.items.map((it, i) => (
+                                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50">
+                                    <div className="flex items-center gap-2">
+                                      <ShoppingBag size={14} className="text-teal-500" />
+                                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{it.product_name}</span>
+                                    </div>
+                                    <a
+                                      href="https://eternals.studio/downloads/sample-package.zip"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-bold transition-all"
+                                    >
+                                      <Download size={12} />
+                                      <span>Download</span>
+                                    </a>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50">
+                                  <div className="flex items-center gap-2">
+                                    <ShoppingBag size={14} className="text-teal-500" />
+                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Digital Package Assets</span>
+                                  </div>
+                                  <a
+                                    href="https://eternals.studio/downloads/sample-package.zip"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 px-3 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-bold transition-all"
+                                  >
+                                    <Download size={12} />
+                                    <span>Download Assets</span>
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Order Attachments & File Upload */}
+                          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                                <Paperclip size={12} className="text-teal-500" />
+                                <span>Attached Project Briefs & Brand Assets ({ord.attachments?.length || 0})</span>
+                              </span>
+
+                              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 text-xs font-bold transition-all cursor-pointer">
+                                {uploadingId === ord.id ? (
+                                  <>
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Uploading...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload size={12} />
+                                    <span>Upload & Attach Brief</span>
+                                  </>
+                                )}
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  disabled={uploadingId === ord.id}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleFileUpload(ord.id, file, true);
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            {ord.attachments && ord.attachments.length > 0 && (
+                              <div className="flex flex-col gap-1.5 mt-1">
+                                {ord.attachments.map((att) => (
+                                  <div
+                                    key={att.id}
+                                    className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 rounded-xl p-2.5 text-xs"
+                                  >
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                      <FileText size={14} className="text-teal-500 shrink-0" />
+                                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{att.name}</span>
+                                      <span className="text-[10px] text-slate-400">({(att.size / 1024).toFixed(1)} KB)</span>
+                                    </div>
+                                    <a
+                                      href={att.url}
+                                      download={att.name}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-teal-500 hover:underline font-bold text-xs shrink-0 flex items-center gap-1"
+                                    >
+                                      <span>Download</span>
+                                      <ExternalLink size={10} />
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
 
             </div>
           </div>
