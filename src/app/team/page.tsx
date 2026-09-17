@@ -223,11 +223,16 @@ export default function TeamPortal() {
         
         {/* Header */}
         <section className="mx-auto max-w-7xl relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-black tracking-tight">Team Portal</h1>
-            <p className="text-sm font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
-              Task Delegation & Financial Cut Workspace
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-2xl overflow-hidden ring-2 ring-teal-500/30 shadow-md flex-shrink-0">
+              <img src="/eternals-logo.jpg" alt="Eternals Studio" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-black tracking-tight">Team Portal</h1>
+              <p className="text-sm font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
+                Task Delegation & Financial Cut Workspace
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">

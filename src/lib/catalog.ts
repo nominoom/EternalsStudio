@@ -52,8 +52,9 @@ export const FALLBACK_PRODUCTS: Product[] = [
     fullDescription: 'A comprehensive kit containing over 50 versatile logo concepts, monograms, emblems, and mascot vectors tailored for competitive gaming organizations, streaming communities, and creative studios. Delivered in layered Adobe Illustrator and SVG formats for lossless scalability.',
     price: 29.99,
     category: 'graphics',
-    image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+    image_url: '/eternals-logo.jpg',
     showcase_images: [
+      '/eternals-logo.jpg',
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1572044162444-ad60f128bdea?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1200&q=80'
@@ -167,8 +168,9 @@ export const FALLBACK_PRODUCTS: Product[] = [
     fullDescription: 'A completely unique, hand-crafted esports mascot logo and brand guidelines package. Designed by the lead Eternals Studio brand architects. Includes full intellectual property transfer, trademark ownership documentation, social kit, jerseys vectors, and source files. Once purchased by a client or organization, no one else can purchase this package.',
     price: 199.99,
     category: 'graphics',
-    image_url: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80',
+    image_url: '/eternals-logo.jpg',
     showcase_images: [
+      '/eternals-logo.jpg',
       'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
     ],

@@ -23,6 +23,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Eternals Studio",
   description: "Professional graphic design, web development, and creative solutions for your business needs.",
+  icons: {
+    icon: "/eternals-logo.jpg",
+    shortcut: "/eternals-logo.jpg",
+    apple: "/eternals-logo.jpg",
+  },
 };
 
 export default function RootLayout({

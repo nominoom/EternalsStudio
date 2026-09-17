@@ -85,6 +85,7 @@ const STATIC_PROJECTS: Project[] = [
     desc: 'A logo/VFX/Coding team created for developers.',
     tags: ['Coding', 'Branding', 'Creative'],
     badges: ['Featured', 'Brand'],
+    image_url: '/eternals-logo.jpg',
     svg: (
       <svg width="100%" height="100%" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
         <defs>

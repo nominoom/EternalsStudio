@@ -38,8 +38,12 @@ export default function About() {
             )}
             <div className="absolute inset-0 bg-black/10 mix-blend-overlay" />
             <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-2">
-                ◆
+              <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center p-2 mb-2 overflow-hidden shadow-md">
+                <img
+                  src={siteContent.branding.logoUrl || "/eternals-logo.jpg"}
+                  alt="Eternals Emblem"
+                  className="w-full h-full object-cover rounded-xl"
+                />
               </div>
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
                 <EditableText
@@ -106,15 +110,13 @@ export default function About() {
             {/* Eternals Studio Official Emblem & Vector Brand Mark */}
             <div className="relative flex flex-col items-center justify-center gap-5 text-center z-10">
               <div className="relative flex items-center justify-center">
-                <div className="absolute -inset-4 bg-gradient-to-r from-teal-500/20 to-indigo-500/20 rounded-full blur-xl animate-pulse" />
-                <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-teal-500/40 p-5 shadow-2xl flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full text-teal-400 fill-none stroke-current" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="50 8, 88 28, 88 72, 50 92, 12 72, 12 28" className="stroke-teal-400" />
-                    <path d="M50 8 L50 92" className="stroke-indigo-400/60" strokeDasharray="4 4" />
-                    <circle cx="50" cy="50" r="14" className="fill-teal-400/20 stroke-teal-300" strokeWidth="4" />
-                    <path d="M36 50 L64 50" className="stroke-white" strokeWidth="5" />
-                    <path d="M43 38 L57 62" className="stroke-teal-300" strokeWidth="4" />
-                  </svg>
+                <div className="absolute -inset-4 bg-gradient-to-r from-teal-500/30 to-indigo-500/30 rounded-full blur-xl animate-pulse" />
+                <div className="relative h-28 w-28 sm:h-36 sm:w-36 rounded-3xl overflow-hidden border-2 border-teal-500/40 shadow-2xl shadow-teal-500/20 group">
+                  <img
+                    src={siteContent.branding.logoUrl || "/eternals-logo.jpg"}
+                    alt="Eternals Studio Official Emblem"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
               </div>
 

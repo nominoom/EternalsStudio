@@ -128,11 +128,11 @@ export default function TawkWidget() {
           aria-label="Open Customer Support Chat"
           title="Chat with Customer Support"
         >
-          <div className="relative">
-            <MessageSquare size={18} />
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+          <div className="relative h-6 w-6 rounded-full overflow-hidden border border-white/50 shadow-xs flex-shrink-0">
+            <img src="/eternals-logo.jpg" alt="Support" className="w-full h-full object-cover" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-white dark:border-slate-900"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 border border-white"></span>
             </span>
           </div>
           <span className="hidden sm:inline tracking-wide font-extrabold">Support Chat</span>
@@ -177,6 +177,9 @@ export default function TawkWidget() {
         >
           <div className="flex items-center gap-2 min-w-0">
             <GripHorizontal size={16} className="text-slate-400 flex-shrink-0" />
+            <div className="h-5 w-5 rounded-md overflow-hidden border border-teal-500/40 flex-shrink-0">
+              <img src="/eternals-logo.jpg" alt="Eternals" className="w-full h-full object-cover" />
+            </div>
             <div className="flex items-center gap-1.5 truncate">
               <span className="relative flex h-2 w-2 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

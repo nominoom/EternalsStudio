@@ -195,8 +195,12 @@ function StoreContent() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 dark:from-teal-900/30 dark:to-indigo-900/30 flex items-center justify-center">
-                        <Sparkles size={40} className="text-teal-500/40" />
+                      <div className="w-full h-full relative overflow-hidden bg-slate-900 flex items-center justify-center">
+                        <img
+                          src="/eternals-logo.jpg"
+                          alt={prod.name}
+                          className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
                     )}
 

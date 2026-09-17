@@ -47,6 +47,7 @@ export interface ReviewItem {
 export interface SiteContent {
   branding: {
     siteName: string;
+    logoUrl?: string;
     logoSubtitle: string;
     announcementBarText: string;
     announcementBarLink: string;
@@ -113,10 +114,13 @@ export interface SiteContent {
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   branding: {
     siteName: 'Eternals Studio',
+    logoUrl: '/eternals-logo.jpg',
     logoSubtitle: 'Digital Assets & Custom Design',
     announcementBarText: '🚀 Flash Sale! Use code ETERNAL25 for 25% off all 3D asset bundles.',
     announcementBarLink: '/store',
-    showAnnouncementBar: true
+    showAnnouncementBar: true,
+    heroImageUrl: '/eternals-logo.jpg',
+    aboutHeaderImageUrl: '/eternals-logo.jpg'
   },
   hero: {
     badgeText: 'Now Powered by Next.js',
@@ -210,7 +214,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       title: 'Custom Brand & Vector Overlays',
       subtitle: 'Elevate your esports channel or corporate website with tailor-made motion graphics.',
       badge: 'Featured Showcase',
-      imageUrl: '',
+      imageUrl: '/eternals-logo.jpg',
       bgGradient: 'from-cyan-500/20 via-teal-500/20 to-indigo-500/20',
       buttonText: 'Explore Portfolio',
       buttonLink: '/portfolio',

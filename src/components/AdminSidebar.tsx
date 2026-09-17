@@ -338,8 +338,10 @@ export default function AdminSidebar() {
       >
         {/* Header */}
         <div className="flex h-20 items-center justify-between border-b border-slate-200/40 px-6 dark:border-slate-800/40">
-          <div className="flex items-center gap-2">
-            <Shield size={20} className="text-teal-600 dark:text-teal-400" />
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg overflow-hidden border border-teal-500/40 shadow-xs flex-shrink-0">
+              <img src="/eternals-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+            </div>
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-50">Admin Console</h2>
           </div>
           <button

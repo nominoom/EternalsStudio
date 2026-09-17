@@ -396,11 +396,16 @@ export default function AdminDashboard() {
       <main className="flex-1 bg-transparent text-slate-900 dark:text-slate-50 py-12 px-6 sm:px-8">
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
-              <p className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
-                Manager panel &bull; Role: Admin
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl overflow-hidden ring-2 ring-teal-500/30 shadow-md flex-shrink-0">
+                <img src="/eternals-logo.jpg" alt="Eternals Studio" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
+                <p className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
+                  Manager panel &bull; Role: Admin
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3 self-start sm:self-auto">
               <button

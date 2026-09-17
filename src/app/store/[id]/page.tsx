@@ -187,10 +187,11 @@ export default function ProductDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-teal-400">
-                    <Sparkles size={48} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Showcase Preview</span>
-                  </div>
+                  <img
+                    src="/eternals-logo.jpg"
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                 )}
 
                 {/* Exclusive badge */}

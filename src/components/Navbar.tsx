@@ -74,12 +74,13 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/40 bg-white/75 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/75 transition-all duration-300">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 sm:px-8">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50 group">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-teal-400 via-teal-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 12L12 22L22 12L12 2Z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="12" cy="12" r="3.5" fill="white" />
-              </svg>
+          <Link href="/" className="flex items-center gap-3 font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50 group">
+            <div className="h-10 w-10 rounded-xl overflow-hidden ring-2 ring-teal-500/30 group-hover:ring-teal-400 shadow-md shadow-teal-500/20 group-hover:scale-105 transition-all flex-shrink-0">
+              <img
+                src={siteContent.branding.logoUrl || "/eternals-logo.jpg"}
+                alt="Eternals Studio Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex flex-col">
               <span className="leading-tight">{siteContent.branding.siteName}</span>
