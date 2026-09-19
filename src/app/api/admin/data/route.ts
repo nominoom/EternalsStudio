@@ -8,6 +8,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_
   apiVersion: '2026-06-24.dahlia',
 });
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'CDN-Cache-Control': 'no-store',
+};
+
 export async function GET(req: Request): Promise<Response> {
   try {
     // 1. Authenticate and validate administrator privileges
@@ -115,10 +123,10 @@ export async function GET(req: Request): Promise<Response> {
       events: systemEvents,
       requests: projectRequests,
       deletedRequests: deletedRequests,
-    }) as unknown as Response;
+    }, { headers: noStoreHeaders }) as unknown as Response;
   } catch (error: any) {
     console.error('Admin API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 }) as unknown as Response;
+    return NextResponse.json({ error: error.message }, { status: 500, headers: noStoreHeaders }) as unknown as Response;
   }
 }
 

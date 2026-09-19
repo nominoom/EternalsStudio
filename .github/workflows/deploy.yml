@@ -1,0 +1,46 @@
+name: Deploy Next.js to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH to Hostinger
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || 65002 }}
+          script: |
+            echo "Navigating to project directory..."
+            cd ${{ secrets.HOSTINGER_PROJECT_PATH || '~/domains/eternals.studio/public_html' }}
+            
+            echo "Pulling latest changes from main branch..."
+            git pull origin main
+            
+            echo "Installing dependencies..."
+            npm install --production=false
+            
+            echo "Building Next.js application..."
+            npm run build
+            
+            echo "Restarting Node.js application..."
+            if command -v pm2 &> /dev/null; then
+              pm2 reload all || pm2 restart all
+            else
+              mkdir -p tmp
+              touch tmp/restart.txt
+            fi
+            
+            echo "Deployment completed successfully!"

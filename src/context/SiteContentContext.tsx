@@ -398,7 +398,9 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
       });
 
       if (!res.ok) {
-        console.warn('API save returned non-200, local storage updated.');
+        console.error('API save returned non-200. Content saved to local browser cache only, remote database update failed.');
+        setIsSaving(false);
+        return false;
       }
 
       setInitialContent(siteContent);

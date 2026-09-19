@@ -314,7 +314,7 @@ export default function AdminDashboard() {
 
     const timestamp = () => new Date().toLocaleTimeString();
 
-    setDeployLogs(prev => [...prev, `[${timestamp()}] [INFO] Starting Vercel Git deployment framework...`]);
+    setDeployLogs(prev => [...prev, `[${timestamp()}] [INFO] Starting Hostinger production deployment pipeline...`]);
     setDeployLogs(prev => [...prev, `[${timestamp()}] [INFO] Resolving branch main and commit configurations...`]);
     await triggerDeployStep('initiated');
     

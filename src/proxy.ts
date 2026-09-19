@@ -3,9 +3,15 @@ import type { NextRequest, NextFetchEvent } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+const isWebhookRoute = createRouteMatcher(['/api/webhooks(.*)']);
 
 export default async function proxy(req: NextRequest, event: NextFetchEvent): Promise<Response> {
   try {
+    // Completely bypass proxy for webhooks to preserve raw body streams and headers for HMAC signatures
+    if (isWebhookRoute(req)) {
+      return NextResponse.next();
+    }
+
     const isPlaceholder = !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
                           process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('placeholder') || 
                           process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('empty');

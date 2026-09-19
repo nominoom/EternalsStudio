@@ -36,7 +36,7 @@ flowchart TB
         Stripe["Stripe Payments\n(Checkout, Invoices, Webhooks)"]
         Resend["Resend Mail API\n(Transactional Emails)"]
         QuickBooks["Intuit QuickBooks Online\n(Accounting, Invoices, Payments)"]
-        VercelHook["Vercel Build Network\n(Deploy Webhooks)"]
+        HostingerHook["Hostinger Git Auto-Deploy Hook\n(Deploy Webhooks)"]
         TawkCloud["Tawk.to Servers\n(Live Operator Routing)"]
     end
 
@@ -65,7 +65,7 @@ flowchart TB
     %% App Server to Third Parties
     APIRoutes <--> Stripe
     APIRoutes --> Resend
-    APIRoutes --> VercelHook
+    APIRoutes --> HostingerHook
     QBLib <--> QuickBooks
 
     %% Data Layer
@@ -90,7 +90,7 @@ flowchart TB
 | **Stripe** | Payment gateway, checkout sessions, custom quote invoices | Inbound webhooks (`checkout.session.completed`) | Checkout session creation, line item queries | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` | Non-production mock payment verification (`/api/checkout/verify-mock`) |
 | **Resend** | Transactional email delivery for quotes, receipts, contact inquiries | None | Client invoice notifications, quote confirmations, admin direct replies | `RESEND_API_KEY`, `ADMIN_EMAIL` | Console logging bypass; transaction execution continues without throwing |
 | **Intuit QuickBooks** | Cloud bookkeeping, invoice synchronizing, payment reconciliation | Inbound CDC Webhook notifications (`/api/webhooks/quickbooks`) | OAuth 2.0 code exchange, proactive token refresh, invoice/payment queries | `QUICKBOOKS_CLIENT_ID`, `QUICKBOOKS_CLIENT_SECRET`, `QUICKBOOKS_ENVIRONMENT`, `QUICKBOOKS_WEBHOOK_VERIFIER` | Database storage of refresh tokens in `quickbooks_tokens`; graceful failure logging |
-| **Vercel** | Edge hosting, CI/CD pipeline triggers | None | HTTP POST to Vercel Deploy Hook | `VERCEL_DEPLOY_HOOK_URL` | Audit event written to `system_events` with simulated deployment stages |
+| **Hostinger** | VPS / Cloud Web Hosting, Git Auto-Deployment Webhooks | Inbound webhooks (`/api/webhooks/stripe`, `/api/webhooks/quickbooks`) | HTTP POST to Hostinger Auto-Deploy Webhook (`HOSTINGER_DEPLOY_HOOK_URL`) | `HOSTINGER_DEPLOY_HOOK_URL` | Audit event written to `system_events` with Hostinger deployment status |
 | **Tawk.to** | Real-time customer support live chat | Client-side WebSocket to Tawk edge | Client-side script injection | Embed script ID (`s1.src = '...'`) | Collapsed floating widget with manual open/close and draggable state |
 
 ---
@@ -609,6 +609,51 @@ For any database insert, update, delete, or financial transaction:
 - Always pass metadata containing the actor email and primary identifier.
 
 ### 3. Graceful Third-Party Degradation
-All third-party outbound requests (Stripe, Resend, QuickBooks, Vercel) must be wrapped in `try/catch` blocks:
+All third-party outbound requests (Stripe, Resend, QuickBooks, Hostinger) must be wrapped in `try/catch` blocks:
 - If a service is down or API credentials are unset in local development, catch the error, log a descriptive warning, and provide a non-blocking fallback so user workflows do not crash.
 - Never expose raw secret keys or third-party exception stacks directly to client responses.
+
+---
+
+## 7. Hostinger Deployment & Live Update Architecture
+
+When deploying Eternals Studio to Hostinger (VPS with Node.js/PM2 or Cloud/Git Hosting), live events flow through three distinct channels:
+
+```mermaid
+flowchart TD
+    subgraph HostingerPlatform["Hostinger Infrastructure"]
+        Nginx["Hostinger Reverse Proxy\n(Nginx / LiteSpeed Cache)"]
+        NodeApp["Next.js Application Runtime\n(Node.js / PM2 :3000)"]
+        GitDeploy["Hostinger Git Auto-Deploy Engine\n(hPanel Advanced > Git)"]
+    end
+
+    subgraph ExternalSources["External Event Triggers"]
+        AdminDashboard["Admin Dashboard\n('Redeploy CDN' / 'Trigger Deploy')"]
+        StripeServer["Stripe Webhook Dispatcher\n(checkout.session.completed)"]
+        SupabaseCloud[("Supabase PostgreSQL\n(system_events table)")]
+    end
+
+    %% Flow 1: Live Deploy Trigger
+    AdminDashboard -->|"POST /api/admin/deploy"| NodeApp
+    NodeApp -->|"Outbound POST (HOSTINGER_DEPLOY_HOOK_URL)"| GitDeploy
+    GitDeploy -->|"Git Pull & Rebuild (pm2 reload)"| NodeApp
+
+    %% Flow 2: Live Inbound Webhooks
+    StripeServer -->|"POST /api/webhooks/stripe"| Nginx
+    Nginx -->|"Bypasses Clerk Proxy"| NodeApp
+    NodeApp -->|"Write Order & Event"| SupabaseCloud
+
+    %% Flow 3: Cache Busting
+    NodeApp -->|"Cache-Control: no-store\nforce-dynamic"| Nginx
+```
+
+### Key Deployment Requirements on Hostinger:
+1. **Auto-Deploy Webhook (`HOSTINGER_DEPLOY_HOOK_URL`)**:
+   In Hostinger hPanel > Advanced > Git, copy the Auto-Deployment Webhook URL and add it to your environment variables as `HOSTINGER_DEPLOY_HOOK_URL`. When triggered in the Admin panel, the server pings Hostinger to pull the repository and rebuild.
+2. **Reverse Proxy & Trailing Slashes**:
+   Ensure Hostinger's Nginx/LiteSpeed does not issue `301/302` redirects for `/api/webhooks/*` (which drops POST body payloads). Inbound webhooks bypass Clerk middleware in [`src/proxy.ts`](file:///c:/Users/stnoo/Downloads/EternalsStudio/src/proxy.ts).
+3. **Cache Busting**:
+   All live data routes (`/api/admin/data`, `/api/admin/site-content`, `/api/webhooks/*`) export `dynamic = 'force-dynamic'` and `revalidate = 0` with `Cache-Control: no-store` headers to prevent Hostinger reverse proxies from serving stale responses.
+4. **Database Connectivity**:
+   Ensure `NEXT_PUBLIC_SUPABASE_URL` resolves to an active Supabase project. If the Supabase project is paused or deleted, event logs cannot be persisted to the database and will fall back to local server logs.
+

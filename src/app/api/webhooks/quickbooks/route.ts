@@ -4,6 +4,9 @@ import { quickbooksRequest } from '../../../../lib/quickbooks';
 import { supabaseAdmin } from '../../../../lib/supabase';
 import { logEvent } from '../../../../lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const WEBHOOK_VERIFIER = process.env.QUICKBOOKS_WEBHOOK_VERIFIER || '';
 
 export async function POST(req: Request): Promise<Response> {

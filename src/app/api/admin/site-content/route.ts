@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'CDN-Cache-Control': 'no-store',
+};
+
 export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
@@ -12,13 +20,13 @@ export async function GET() {
 
     if (error) {
       console.warn('Database fetch warning for site_content:', error.message);
-      return NextResponse.json({ content: null });
+      return NextResponse.json({ content: null }, { headers: noStoreHeaders });
     }
 
-    return NextResponse.json({ content: data?.content || null });
+    return NextResponse.json({ content: data?.content || null }, { headers: noStoreHeaders });
   } catch (err: any) {
     console.error('Error fetching site content:', err);
-    return NextResponse.json({ content: null, error: err.message }, { status: 500 });
+    return NextResponse.json({ content: null, error: err.message }, { status: 500, headers: noStoreHeaders });
   }
 }
 
