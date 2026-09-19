@@ -4,6 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useSiteContent, TeamMember, StatItem, PromoBanner } from '../context/SiteContentContext';
 import EditableImage from './EditableImage';
+import EditorTopBar, { ViewportMode } from './editor/EditorTopBar';
+import EditorSidebar from './editor/EditorSidebar';
+import PageCanvas from './editor/PageCanvas';
+import SectionInspector from './editor/SectionInspector';
+import EditorBottomBar from './editor/EditorBottomBar';
+import SectionLibraryModal from './editor/SectionLibraryModal';
 import {
   Users,
   BarChart3,
@@ -26,8 +32,21 @@ import {
   Sparkles,
   ShoppingBag,
   Briefcase,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Maximize2,
+  ExternalLink,
+  SlidersHorizontal,
+  Monitor
 } from 'lucide-react';
+
+const SITE_PAGES = [
+  { id: 'main', name: 'Home (Main)', path: '/', icon: '⚡' },
+  { id: 'services', name: 'Services', path: '/services', icon: '💻' },
+  { id: 'portfolio', name: 'Portfolio', path: '/portfolio', icon: '🏆' },
+  { id: 'store', name: 'Store', path: '/store', icon: '🛍️' },
+  { id: 'about', name: 'About & Team', path: '/about', icon: '👥' },
+  { id: 'contact', name: 'Contact & Inquiries', path: '/contact', icon: '📍' },
+];
 
 export default function SiteBuilderTab() {
   const {
@@ -45,8 +64,20 @@ export default function SiteBuilderTab() {
     deleteStat,
     addPromoBanner,
     updatePromoBanner,
-    deletePromoBanner
+    deletePromoBanner,
+    addSection,
+    deleteSection,
+    resetPageSections
   } = useSiteContent();
+
+  const [editorMode, setEditorMode] = useState<'visual' | 'forms'>('visual');
+  const [activePage, setActivePage] = useState<string>('main');
+  const [viewport, setViewport] = useState<ViewportMode>('desktop');
+  const [zoom, setZoom] = useState<number>(100);
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>('hero');
+  const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [targetInsertIndex, setTargetInsertIndex] = useState<number | undefined>(undefined);
 
   const [activeSubTab, setActiveSubTab] = useState<'team' | 'stats' | 'banners' | 'copy' | 'sections' | 'contact'>('team');
   const [showToast, setShowToast] = useState(false);
@@ -189,6 +220,39 @@ export default function SiteBuilderTab() {
     setIsBannerModalOpen(false);
   };
 
+  const currentSections = siteContent.pageSectionOrder?.[activePage] || [];
+
+  const handleOpenAddSectionModal = (insertIndex?: number) => {
+    setTargetInsertIndex(insertIndex);
+    setIsAddSectionModalOpen(true);
+  };
+
+  const handleInsertSection = (block: any) => {
+    addSection(activePage, block, targetInsertIndex);
+    setSelectedSectionId(block.id);
+    setToastMessage(`Section "${block.title}" added to ${activePage}!`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  const handleDeleteSelectedSection = () => {
+    if (!selectedSectionId) return;
+    const confirmDelete = window.confirm(`Delete section "${selectedSectionId}" from ${activePage}?`);
+    if (confirmDelete) {
+      deleteSection(activePage, selectedSectionId);
+      setSelectedSectionId(null);
+      setToastMessage('Section deleted.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
+  };
+
+  const handleOpenLive = () => {
+    const pageObj = SITE_PAGES.find((p) => p.id === activePage);
+    const path = pageObj?.path || '/';
+    window.open(path, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header Bar */}
@@ -199,7 +263,7 @@ export default function SiteBuilderTab() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              Visual Site Content & Data Manager
+              Visual Page Editor & Content Studio
               {hasUnsavedChanges && (
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Unsaved Changes
@@ -207,18 +271,26 @@ export default function SiteBuilderTab() {
               )}
             </h2>
             <p className="text-xs text-slate-400">
-              Manage website text copy, team members, statistics, section toggles, and contact info without touching code.
+              GoDaddy & Hostinger-style visual page builder. Move sections, edit copy in-place, and publish live.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <Link
+            href="/admin/editor"
+            className="px-4 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 rounded-xl shadow-lg shadow-teal-500/20 border border-teal-400/30 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Launch Fullscreen Editor ↗</span>
+          </Link>
+
           <button
             onClick={resetToDefault}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-750 rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset Defaults
+            Reset
           </button>
 
           <button
@@ -234,11 +306,37 @@ export default function SiteBuilderTab() {
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Publish Site Changes
+                Publish Live
               </>
             )}
           </button>
         </div>
+      </div>
+
+      {/* Editor Mode Selector Toggles */}
+      <div className="flex items-center gap-2 bg-slate-950/70 p-1.5 rounded-2xl border border-slate-800 max-w-xl">
+        <button
+          onClick={() => setEditorMode('visual')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+            editorMode === 'visual'
+              ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Sparkles size={14} />
+          <span>⚡ Visual Page Editor (Studio Mode)</span>
+        </button>
+        <button
+          onClick={() => setEditorMode('forms')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+            editorMode === 'forms'
+              ? 'bg-slate-800 text-white shadow-md border border-slate-700'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <FileText size={14} />
+          <span>📋 Data Tables & Forms</span>
+        </button>
       </div>
 
       {/* Toast Alert */}
@@ -254,8 +352,100 @@ export default function SiteBuilderTab() {
         </div>
       )}
 
-      {/* Sub-Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
+      {/* MODE 1: VISUAL STUDIO EDITOR (EMBEDDED) */}
+      {editorMode === 'visual' && (
+        <div className="border border-slate-800 rounded-3xl overflow-hidden shadow-2xl bg-slate-950 flex flex-col h-[750px] relative">
+          {/* Embedded Top Bar */}
+          <EditorTopBar
+            activePage={activePage}
+            onSelectPage={(pageId) => {
+              setActivePage(pageId);
+              setSelectedSectionId(null);
+            }}
+            pages={SITE_PAGES}
+            viewport={viewport}
+            onSelectViewport={setViewport}
+            isPreviewMode={isPreviewMode}
+            onTogglePreview={() => setIsPreviewMode((prev) => !prev)}
+            zoom={zoom}
+            onZoomChange={(delta) => setZoom((prev) => Math.min(130, Math.max(60, prev + delta)))}
+            onSave={handleSave}
+            isSaving={isSaving}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onOpenLive={handleOpenLive}
+          />
+
+          {/* Embedded Workspace: Sidebar + Canvas + Inspector */}
+          <div className="flex-1 flex overflow-hidden relative">
+            {!isPreviewMode && (
+              <EditorSidebar
+                activePage={activePage}
+                onSelectPage={(pageId) => {
+                  setActivePage(pageId);
+                  setSelectedSectionId(null);
+                }}
+                pages={SITE_PAGES}
+                currentSections={currentSections}
+                selectedSectionId={selectedSectionId}
+                onSelectSection={(secId) => setSelectedSectionId(secId)}
+                onOpenAddSectionModal={() => handleOpenAddSectionModal()}
+              />
+            )}
+
+            <PageCanvas
+              activePage={activePage}
+              viewport={viewport}
+              zoom={zoom}
+              isPreviewMode={isPreviewMode}
+              selectedSectionId={selectedSectionId}
+              onSelectSection={(secId) => setSelectedSectionId(secId)}
+              onOpenAddSectionAfter={(index) => handleOpenAddSectionModal(index)}
+            />
+
+            {!isPreviewMode && selectedSectionId && (
+              <SectionInspector
+                pageId={activePage}
+                sectionId={selectedSectionId}
+                onClose={() => setSelectedSectionId(null)}
+                onDelete={handleDeleteSelectedSection}
+              />
+            )}
+          </div>
+
+          {/* Embedded Bottom Bar [save/del] */}
+          <EditorBottomBar
+            activePage={activePage}
+            selectedSectionId={selectedSectionId}
+            onDeleteSelectedSection={handleDeleteSelectedSection}
+            onSave={handleSave}
+            onReset={() => {
+              if (window.confirm(`Discard all pending modifications to the ${activePage} page?`)) {
+                resetPageSections(activePage);
+                setToastMessage('Page layout restored to default state.');
+                setShowToast(true);
+                setTimeout(() => setShowToast(false), 4000);
+              }
+            }}
+            isSaving={isSaving}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onOpenLive={handleOpenLive}
+          />
+
+          {/* Section Library Modal */}
+          <SectionLibraryModal
+            isOpen={isAddSectionModalOpen}
+            onClose={() => setIsAddSectionModalOpen(false)}
+            onAddSection={handleInsertSection}
+            targetPageId={activePage}
+          />
+        </div>
+      )}
+
+      {/* MODE 2: FORM TABLES & DATA INPUTS */}
+      {editorMode === 'forms' && (
+        <div className="space-y-6">
+          {/* Sub-Tabs Bar */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         {[
           { id: 'team', label: '👥 Team Members', icon: Users },
           { id: 'stats', label: '📊 Stats & Data', icon: BarChart3 },
@@ -700,6 +890,8 @@ export default function SiteBuilderTab() {
               />
             </div>
           </div>
+        </div>
+      )}
         </div>
       )}
 

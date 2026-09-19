@@ -44,6 +44,25 @@ export interface ReviewItem {
   content: string;
 }
 
+export interface SectionStyle {
+  bg?: 'mesh' | 'slate' | 'glass' | 'glow' | 'gradient';
+  padding?: 'compact' | 'standard' | 'spacious';
+  align?: 'left' | 'center' | 'right';
+  border?: boolean;
+}
+
+export interface CustomSectionBlock {
+  id: string;
+  type: 'hero' | 'features' | 'cta' | 'faq' | 'text' | 'stats';
+  title: string;
+  subtitle?: string;
+  content?: string;
+  badge?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  items?: Array<{ id: string; title: string; desc: string; icon?: string }>;
+}
+
 export interface SiteContent {
   branding: {
     siteName: string;
@@ -109,9 +128,26 @@ export interface SiteContent {
     githubUrl: string;
     discordUrl: string;
   };
+  pageSectionOrder?: Record<string, string[]>;
+  hiddenSections?: Record<string, string[]>;
+  sectionStyles?: Record<string, SectionStyle>;
+  customSections?: Record<string, CustomSectionBlock[]>;
 }
 
+export const DEFAULT_PAGE_SECTIONS: Record<string, string[]> = {
+  main: ['announcement', 'hero', 'banners', 'stats', 'services', 'reviews', 'cta'],
+  services: ['header', 'process', 'industries', 'cta'],
+  portfolio: ['header', 'projects', 'reviews', 'cta'],
+  store: ['header', 'banners', 'catalog', 'cta'],
+  about: ['header', 'story', 'vision', 'team', 'expertise', 'cta'],
+  contact: ['header', 'info', 'form', 'discord']
+};
+
 export const DEFAULT_SITE_CONTENT: SiteContent = {
+  pageSectionOrder: DEFAULT_PAGE_SECTIONS,
+  hiddenSections: {},
+  sectionStyles: {},
+  customSections: {},
   branding: {
     siteName: 'Eternals Studio',
     logoUrl: '/eternals-logo.jpg',
@@ -317,6 +353,14 @@ export interface SiteContentContextType {
   addPromoBanner: (banner: Omit<PromoBanner, 'id'>) => void;
   updatePromoBanner: (id: string, updated: Partial<PromoBanner>) => void;
   deletePromoBanner: (id: string) => void;
+  // Section Reordering, Visibility, Styles, and Add/Delete
+  moveSection: (pageId: string, sectionId: string, direction: 'up' | 'down') => void;
+  toggleSectionVisibility: (pageId: string, sectionId: string) => void;
+  deleteSection: (pageId: string, sectionId: string) => void;
+  duplicateSection: (pageId: string, sectionId: string) => void;
+  addSection: (pageId: string, block: CustomSectionBlock, insertIndex?: number) => void;
+  updateSectionStyle: (pageId: string, sectionId: string, style: Partial<SectionStyle>) => void;
+  resetPageSections: (pageId: string) => void;
 }
 
 const SiteContentContext = createContext<SiteContentContextType | undefined>(undefined);
@@ -495,6 +539,168 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     }));
   };
 
+  // Section Reordering, Visibility, Styling, and Add/Delete
+  const moveSection = (pageId: string, sectionId: string, direction: 'up' | 'down') => {
+    setSiteContent((prev) => {
+      const currentOrder = [
+        ...(prev.pageSectionOrder?.[pageId] || DEFAULT_PAGE_SECTIONS[pageId] || [])
+      ];
+      const index = currentOrder.indexOf(sectionId);
+      if (index === -1) return prev;
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= currentOrder.length) return prev;
+
+      const temp = currentOrder[index];
+      currentOrder[index] = currentOrder[targetIndex];
+      currentOrder[targetIndex] = temp;
+
+      return {
+        ...prev,
+        pageSectionOrder: {
+          ...(prev.pageSectionOrder || {}),
+          [pageId]: currentOrder
+        }
+      };
+    });
+  };
+
+  const toggleSectionVisibility = (pageId: string, sectionId: string) => {
+    setSiteContent((prev) => {
+      const currentHidden = [...(prev.hiddenSections?.[pageId] || [])];
+      const exists = currentHidden.includes(sectionId);
+      const updatedHidden = exists
+        ? currentHidden.filter((id) => id !== sectionId)
+        : [...currentHidden, sectionId];
+
+      return {
+        ...prev,
+        hiddenSections: {
+          ...(prev.hiddenSections || {}),
+          [pageId]: updatedHidden
+        }
+      };
+    });
+  };
+
+  const deleteSection = (pageId: string, sectionId: string) => {
+    setSiteContent((prev) => {
+      const currentOrder = [
+        ...(prev.pageSectionOrder?.[pageId] || DEFAULT_PAGE_SECTIONS[pageId] || [])
+      ];
+      const updatedOrder = currentOrder.filter((id) => id !== sectionId);
+
+      const currentHidden = [...(prev.hiddenSections?.[pageId] || [])];
+      if (!currentHidden.includes(sectionId)) {
+        currentHidden.push(sectionId);
+      }
+
+      return {
+        ...prev,
+        pageSectionOrder: {
+          ...(prev.pageSectionOrder || {}),
+          [pageId]: updatedOrder
+        },
+        hiddenSections: {
+          ...(prev.hiddenSections || {}),
+          [pageId]: currentHidden
+        }
+      };
+    });
+  };
+
+  const duplicateSection = (pageId: string, sectionId: string) => {
+    setSiteContent((prev) => {
+      const currentOrder = [
+        ...(prev.pageSectionOrder?.[pageId] || DEFAULT_PAGE_SECTIONS[pageId] || [])
+      ];
+      const index = currentOrder.indexOf(sectionId);
+      const newId = `${sectionId}-copy-${Date.now()}`;
+
+      // Duplicate any custom section block if it exists
+      const pageCustom = [...((prev.customSections as any)?.[pageId] || [])];
+      const matchedCustom = pageCustom.find((c: any) => c.id === sectionId);
+      let updatedCustom = prev.customSections || {};
+      if (matchedCustom) {
+        updatedCustom = {
+          ...updatedCustom,
+          [pageId]: [...pageCustom, { ...matchedCustom, id: newId, title: `${matchedCustom.title} (Copy)` }]
+        };
+      }
+
+      const updatedOrder = [...currentOrder];
+      if (index !== -1) {
+        updatedOrder.splice(index + 1, 0, newId);
+      } else {
+        updatedOrder.push(newId);
+      }
+
+      return {
+        ...prev,
+        customSections: updatedCustom,
+        pageSectionOrder: {
+          ...(prev.pageSectionOrder || {}),
+          [pageId]: updatedOrder
+        }
+      };
+    });
+  };
+
+  const addSection = (pageId: string, block: CustomSectionBlock, insertIndex?: number) => {
+    setSiteContent((prev) => {
+      const currentOrder = [
+        ...(prev.pageSectionOrder?.[pageId] || DEFAULT_PAGE_SECTIONS[pageId] || [])
+      ];
+      const updatedOrder = [...currentOrder];
+      if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= updatedOrder.length) {
+        updatedOrder.splice(insertIndex, 0, block.id);
+      } else {
+        updatedOrder.push(block.id);
+      }
+
+      const pageCustom = [...((prev.customSections as any)?.[pageId] || [])];
+
+      return {
+        ...prev,
+        customSections: {
+          ...(prev.customSections || {}),
+          [pageId]: [...pageCustom, block]
+        },
+        pageSectionOrder: {
+          ...(prev.pageSectionOrder || {}),
+          [pageId]: updatedOrder
+        }
+      };
+    });
+  };
+
+  const updateSectionStyle = (pageId: string, sectionId: string, style: Partial<SectionStyle>) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      sectionStyles: {
+        ...(prev.sectionStyles || {}),
+        [sectionId]: {
+          ...((prev.sectionStyles || {})[sectionId] || {}),
+          ...style
+        }
+      }
+    }));
+  };
+
+  const resetPageSections = (pageId: string) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      pageSectionOrder: {
+        ...(prev.pageSectionOrder || {}),
+        [pageId]: DEFAULT_PAGE_SECTIONS[pageId] || []
+      },
+      hiddenSections: {
+        ...(prev.hiddenSections || {}),
+        [pageId]: []
+      }
+    }));
+  };
+
   const hasUnsavedChanges = JSON.stringify(siteContent) !== JSON.stringify(initialContent);
 
   return (
@@ -519,7 +725,14 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         deleteStat,
         addPromoBanner,
         updatePromoBanner,
-        deletePromoBanner
+        deletePromoBanner,
+        moveSection,
+        toggleSectionVisibility,
+        deleteSection,
+        duplicateSection,
+        addSection,
+        updateSectionStyle,
+        resetPageSections
       }}
     >
       {children}

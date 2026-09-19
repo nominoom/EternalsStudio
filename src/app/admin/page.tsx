@@ -408,13 +408,13 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3 self-start sm:self-auto">
-              <button
-                onClick={() => setActiveTab('site-builder')}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-extrabold text-xs px-5 py-3 transition-all shadow-md shadow-teal-500/10 cursor-pointer"
+              <Link
+                href="/admin/editor"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 via-emerald-500 to-indigo-600 hover:from-teal-600 hover:to-indigo-700 text-white font-extrabold text-xs px-5 py-3 transition-all shadow-md shadow-teal-500/15 cursor-pointer"
               >
                 <Sparkles size={16} />
-                <span>⚡ Launch Site Content Builder</span>
-              </button>
+                <span>⚡ Open Fullscreen Page Editor</span>
+              </Link>
               <Link
                 href="/team"
                 className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-950 font-bold text-xs px-5 py-3 transition-all shadow-sm cursor-pointer"
@@ -492,7 +492,7 @@ export default function AdminDashboard() {
                       ? 'Project Requests'
                       : tab === 'logs'
                         ? 'Logs & Deployments'
-                        : '⚡ Site Content Builder'}
+                        : '⚡ Studio Page Editor'}
               </button>
             ))}
           </div>
