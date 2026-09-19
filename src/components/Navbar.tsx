@@ -17,7 +17,7 @@ export default function Navbar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { cart, toggleCart } = useCart();
   const { hasAdminPrivileges, toggleAdminSidebar } = useAdmin();
-  const { siteContent } = useSiteContent();
+  const { siteContent, cmsStore } = useSiteContent();
 
   // Load theme preference on mount - defaults to LIGHT mode unless explicitly saved as dark
   useEffect(() => {
@@ -47,15 +47,23 @@ export default function Navbar() {
 
   const isTeamOrAdmin = hasAdminPrivileges || user?.publicMetadata?.role === 'team';
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Services', path: '/services' },
-    { name: 'Portfolio', path: '/portfolio' },
-    { name: 'Store', path: '/store' },
-    { name: 'Partners', path: '/partners' },
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-  ];
+  const mainNav = cmsStore?.navigation?.main;
+  const navLinks: Array<{ name: string; path: string; badge?: string; external?: boolean }> = mainNav?.items?.length
+    ? mainNav.items.map((item) => ({
+        name: item.label,
+        path: item.href,
+        badge: item.badge,
+        external: item.isExternal
+      }))
+    : [
+        { name: 'Home', path: '/' },
+        { name: 'Services', path: '/services' },
+        { name: 'Portfolio', path: '/portfolio' },
+        { name: 'Store', path: '/store' },
+        { name: 'Partners', path: '/partners' },
+        { name: 'About', path: '/about' },
+        { name: 'Contact', path: '/contact' },
+      ];
 
   return (
     <>
@@ -97,12 +105,17 @@ export default function Navbar() {
                   <li key={link.path}>
                     <Link
                       href={link.path}
-                      className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 ${isActive
+                      className={`text-sm font-semibold transition-all duration-200 hover:text-teal-500 inline-flex items-center gap-1.5 ${isActive
                           ? 'text-teal-500 dark:text-teal-400 font-bold'
                           : 'text-slate-600 dark:text-slate-400'
                         }`}
                     >
-                      {link.name}
+                      <span>{link.name}</span>
+                      {link.badge && (
+                        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-500 border border-teal-500/30">
+                          {link.badge}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -112,6 +125,16 @@ export default function Navbar() {
 
           {/* Action Controls */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* CMS Configured CTA Button */}
+            {mainNav?.showCtaButton !== false && mainNav?.ctaButtonText && (
+              <Link
+                href={mainNav.ctaButtonLink || '/contact'}
+                className="hidden lg:flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-600 text-white shadow-md shadow-teal-500/20 transition-all duration-200"
+              >
+                <span>{mainNav.ctaButtonText}</span>
+                <ArrowRight size={13} />
+              </Link>
+            )}
             {/* Admin Sidebar Toggle */}
             {hasAdminPrivileges && (
               <button

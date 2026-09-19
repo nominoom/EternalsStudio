@@ -1,6 +1,24 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { 
+  CMSPage, 
+  CMSSection, 
+  CMSBlock, 
+  PageVersion, 
+  CMSNavigation, 
+  CMSFooter, 
+  GlobalThemeSettings, 
+  MediaAsset, 
+  CMSAuditEntry 
+} from '@/types/cms';
+import { 
+  CMSPayload, 
+  DEFAULT_CMS_DATA, 
+  DEFAULT_NAVIGATION, 
+  DEFAULT_FOOTER 
+} from '@/lib/cms/cmsService';
+import { DEFAULT_THEME_SETTINGS, generateThemeCssVariables } from '@/lib/cms/theme';
 
 export interface TeamMember {
   id: string;
@@ -361,11 +379,31 @@ export interface SiteContentContextType {
   addSection: (pageId: string, block: CustomSectionBlock, insertIndex?: number) => void;
   updateSectionStyle: (pageId: string, sectionId: string, style: Partial<SectionStyle>) => void;
   resetPageSections: (pageId: string) => void;
+  // Full CMS Store & Studio Builder Capabilities
+  cmsStore: CMSPayload;
+  activeDraft: CMSPage | null;
+  setActiveDraft: (page: CMSPage | ((prev: CMSPage | null) => CMSPage | null)) => void;
+  saveDraft: (pageId: string, pageData: CMSPage) => Promise<boolean>;
+  publishPage: (pageId: string, pageData: CMSPage, commitNote?: string) => Promise<boolean>;
+  restoreVersion: (pageId: string, versionId: string) => Promise<boolean>;
+  updateNavigation: (nav: CMSNavigation) => Promise<boolean>;
+  updateFooter: (footer: CMSFooter) => Promise<boolean>;
+  updateTheme: (theme: GlobalThemeSettings) => Promise<boolean>;
+  addMediaAsset: (asset: MediaAsset) => Promise<boolean>;
+  deleteMediaAsset: (assetId: string) => Promise<boolean>;
+  createNewPage: (title: string, slug: string) => CMSPage;
+  duplicatePage: (pageId: string) => CMSPage;
+  deletePage: (pageId: string) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 }
 
 const SiteContentContext = createContext<SiteContentContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'eternals_site_content_v1';
+const CMS_STORAGE_KEY = 'eternals_cms_v1';
 
 export function SiteContentProvider({ children }: { children: React.ReactNode }) {
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
@@ -373,6 +411,30 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // Full CMS Store & Studio Builder State
+  const [cmsStore, setCmsStore] = useState<CMSPayload>(DEFAULT_CMS_DATA);
+  const [activeDraft, setActiveDraft] = useState<CMSPage | null>(null);
+
+  // Undo / Redo History Stack (up to 30 snapshot states)
+  const [undoStack, setUndoStack] = useState<{ siteContent?: SiteContent; activeDraft?: CMSPage | null }[]>([]);
+  const [redoStack, setRedoStack] = useState<{ siteContent?: SiteContent; activeDraft?: CMSPage | null }[]>([]);
+
+  // Apply theme tokens to CSS root variables dynamically
+  const applyThemeTokens = (theme: GlobalThemeSettings) => {
+    if (typeof document === 'undefined') return;
+    try {
+      let styleEl = document.getElementById('cms-theme-vars') as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'cms-theme-vars';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.innerHTML = generateThemeCssVariables(theme);
+    } catch (e) {
+      console.warn('Could not inject theme CSS variables:', e);
+    }
+  };
 
   const toggleEditMode = () => {
     setIsEditMode((prev) => !prev);
@@ -385,6 +447,7 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     async function loadContent() {
+      // 1. Load legacy site-content
       try {
         const res = await fetch('/api/admin/site-content');
         if (res.ok) {
@@ -393,24 +456,55 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
             const merged = deepMerge(DEFAULT_SITE_CONTENT, data.content);
             setSiteContent(merged);
             setInitialContent(merged);
-            setIsLoading(false);
-            return;
           }
         }
       } catch (err) {
         console.warn('Failed to fetch site content from API, checking local storage:', err);
+        try {
+          const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            const merged = deepMerge(DEFAULT_SITE_CONTENT, parsed);
+            setSiteContent(merged);
+            setInitialContent(merged);
+          }
+        } catch (e) {
+          console.warn('Error reading site content from local storage:', e);
+        }
       }
 
+      // 2. Load modern CMS Store
       try {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          const merged = deepMerge(DEFAULT_SITE_CONTENT, parsed);
-          setSiteContent(merged);
-          setInitialContent(merged);
+        const cmsRes = await fetch('/api/admin/cms');
+        if (cmsRes.ok) {
+          const cmsData = await cmsRes.json();
+          if (cmsData.store) {
+            const mergedCMS: CMSPayload = {
+              pages: cmsData.store.pages || {},
+              drafts: cmsData.store.drafts || {},
+              versions: cmsData.store.versions || {},
+              navigation: cmsData.store.navigation || DEFAULT_NAVIGATION,
+              footer: cmsData.store.footer || DEFAULT_FOOTER,
+              theme: cmsData.store.theme || DEFAULT_THEME_SETTINGS,
+              media: cmsData.store.media || DEFAULT_CMS_DATA.media,
+              auditLog: cmsData.store.auditLog || []
+            };
+            setCmsStore(mergedCMS);
+            applyThemeTokens(mergedCMS.theme);
+          }
         }
-      } catch (e) {
-        console.warn('Error reading site content from local storage:', e);
+      } catch (cmsErr) {
+        console.warn('Could not load CMS store from API, checking local storage:', cmsErr);
+        try {
+          const localCMS = localStorage.getItem(CMS_STORAGE_KEY);
+          if (localCMS) {
+            const parsed = JSON.parse(localCMS);
+            setCmsStore(parsed);
+            if (parsed.theme) applyThemeTokens(parsed.theme);
+          }
+        } catch (err) {
+          // ignore
+        }
       } finally {
         setIsLoading(false);
       }
@@ -701,6 +795,359 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     }));
   };
 
+  // Full CMS Methods
+  const saveDraft = async (pageId: string, pageData: CMSPage): Promise<boolean> => {
+    try {
+      const updatedDrafts = { ...cmsStore.drafts, [pageId]: pageData };
+      const updatedStore = { ...cmsStore, drafts: updatedDrafts };
+      setCmsStore(updatedStore);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_draft',
+          payload: { page: pageData }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error saving draft:', err);
+      return false;
+    }
+  };
+
+  const publishPage = async (pageId: string, pageData: CMSPage, commitNote?: string): Promise<boolean> => {
+    try {
+      const publishedPage: CMSPage = {
+        ...pageData,
+        status: 'published',
+        version: (pageData.version || 1) + 1,
+        updatedAt: new Date().toISOString(),
+        publishedAt: new Date().toISOString()
+      };
+
+      const newVersion: PageVersion = {
+        id: `ver-${pageId}-${Date.now()}`,
+        pageId,
+        versionNumber: publishedPage.version,
+        pageTitle: publishedPage.title,
+        snapshot: publishedPage,
+        createdAt: new Date().toISOString(),
+        createdBy: 'Admin',
+        commitMessage: commitNote || 'Published page live'
+      };
+
+      const updatedVersions = [...(cmsStore.versions[pageId] || []), newVersion];
+      const updatedStore: CMSPayload = {
+        ...cmsStore,
+        pages: { ...cmsStore.pages, [pageId]: publishedPage },
+        drafts: { ...cmsStore.drafts, [pageId]: publishedPage },
+        versions: { ...cmsStore.versions, [pageId]: updatedVersions }
+      };
+
+      setCmsStore(updatedStore);
+      setActiveDraft(publishedPage);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'publish_page',
+          payload: { page: pageData, commitMessage: commitNote }
+        })
+      });
+
+      return res.ok;
+    } catch (err) {
+      console.error('Error publishing page:', err);
+      return false;
+    }
+  };
+
+  const restoreVersion = async (pageId: string, versionId: string): Promise<boolean> => {
+    try {
+      const versions = cmsStore.versions[pageId] || [];
+      const targetVersion = versions.find((v) => v.id === versionId);
+      if (!targetVersion) return false;
+
+      const restored: CMSPage = {
+        ...targetVersion.snapshot,
+        status: 'draft',
+        updatedAt: new Date().toISOString()
+      };
+
+      const updatedDrafts = { ...cmsStore.drafts, [pageId]: restored };
+      const updatedStore = { ...cmsStore, drafts: updatedDrafts };
+      setCmsStore(updatedStore);
+      if (activeDraft?.id === pageId) {
+        setActiveDraft(restored);
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'restore_version',
+          payload: { pageId, versionId }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error restoring version:', err);
+      return false;
+    }
+  };
+
+  const updateNavigation = async (nav: CMSNavigation): Promise<boolean> => {
+    try {
+      const loc = nav.location || 'main';
+      const updatedNav = { ...cmsStore.navigation, [loc]: nav };
+      const updatedStore = { ...cmsStore, navigation: updatedNav };
+      setCmsStore(updatedStore);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_navigation',
+          payload: { navigation: updatedNav }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error updating navigation:', err);
+      return false;
+    }
+  };
+
+  const updateFooter = async (footer: CMSFooter): Promise<boolean> => {
+    try {
+      const updatedStore = { ...cmsStore, footer };
+      setCmsStore(updatedStore);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_footer',
+          payload: { footer }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error updating footer:', err);
+      return false;
+    }
+  };
+
+  const updateTheme = async (theme: GlobalThemeSettings): Promise<boolean> => {
+    try {
+      const updatedStore = { ...cmsStore, theme };
+      setCmsStore(updatedStore);
+      applyThemeTokens(theme);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_theme',
+          payload: { theme }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error updating theme:', err);
+      return false;
+    }
+  };
+
+  const addMediaAsset = async (asset: MediaAsset): Promise<boolean> => {
+    try {
+      const updatedMedia = [asset, ...cmsStore.media];
+      const updatedStore = { ...cmsStore, media: updatedMedia };
+      setCmsStore(updatedStore);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_media',
+          payload: { asset }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error adding media asset:', err);
+      return false;
+    }
+  };
+
+  const deleteMediaAsset = async (assetId: string): Promise<boolean> => {
+    try {
+      const updatedMedia = cmsStore.media.filter((m) => m.id !== assetId);
+      const updatedStore = { ...cmsStore, media: updatedMedia };
+      setCmsStore(updatedStore);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+      }
+
+      const res = await fetch('/api/admin/cms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_media',
+          payload: { assetId }
+        })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Error deleting media asset:', err);
+      return false;
+    }
+  };
+
+  const createNewPage = (title: string, slug: string): CMSPage => {
+    const cleanSlug = slug.startsWith('/') ? slug : `/${slug}`;
+    const pageId = cleanSlug.replace(/^\//, '') || 'new-page';
+    const newPage: CMSPage = {
+      id: pageId,
+      title,
+      slug: cleanSlug,
+      status: 'draft',
+      template: 'custom',
+      sections: [],
+      seo: {
+        title: `${title} | Eternals Studio`,
+        description: `Explore ${title} at Eternals Studio.`
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+    const updatedStore = {
+      ...cmsStore,
+      drafts: { ...cmsStore.drafts, [pageId]: newPage }
+    };
+    setCmsStore(updatedStore);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+    }
+    return newPage;
+  };
+
+  const duplicatePage = (pageId: string): CMSPage => {
+    const source = cmsStore.drafts[pageId] || cmsStore.pages[pageId] || {
+      id: pageId,
+      title: pageId,
+      slug: `/${pageId}`,
+      status: 'draft' as const,
+      template: 'custom' as const,
+      sections: []
+    };
+    const newId = `${pageId}-copy-${Date.now()}`;
+    const duplicated: CMSPage = {
+      ...source,
+      id: newId,
+      title: `${source.title} (Copy)`,
+      slug: `${source.slug}-copy`,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+    const updatedStore = {
+      ...cmsStore,
+      drafts: { ...cmsStore.drafts, [newId]: duplicated }
+    };
+    setCmsStore(updatedStore);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+    }
+    return duplicated;
+  };
+
+  const deletePage = (pageId: string) => {
+    const updatedPages = { ...cmsStore.pages };
+    delete updatedPages[pageId];
+    const updatedDrafts = { ...cmsStore.drafts };
+    delete updatedDrafts[pageId];
+    const updatedStore = { ...cmsStore, pages: updatedPages, drafts: updatedDrafts };
+    setCmsStore(updatedStore);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(updatedStore));
+    }
+  };
+
+  // Undo / Redo
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
+
+  const undo = () => {
+    if (undoStack.length === 0) return;
+    const previous = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.slice(0, -1));
+    setRedoStack((prev) => [...prev, { siteContent, activeDraft }]);
+
+    if (previous.siteContent) setSiteContent(previous.siteContent);
+    if (previous.activeDraft !== undefined) setActiveDraft(previous.activeDraft);
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, { siteContent, activeDraft }]);
+
+    if (next.siteContent) setSiteContent(next.siteContent);
+    if (next.activeDraft !== undefined) setActiveDraft(next.activeDraft);
+  };
+
+  // Global Keyboard shortcuts: Ctrl+Z and Ctrl+Shift+Z / Ctrl+Y
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (
+        ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) ||
+        ((e.metaKey || e.ctrlKey) && e.key === 'y')
+      ) {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undoStack, redoStack, siteContent, activeDraft]);
+
   const hasUnsavedChanges = JSON.stringify(siteContent) !== JSON.stringify(initialContent);
 
   return (
@@ -732,7 +1179,26 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         duplicateSection,
         addSection,
         updateSectionStyle,
-        resetPageSections
+        resetPageSections,
+        // Full CMS Store & Studio Builder Capabilities
+        cmsStore,
+        activeDraft,
+        setActiveDraft,
+        saveDraft,
+        publishPage,
+        restoreVersion,
+        updateNavigation,
+        updateFooter,
+        updateTheme,
+        addMediaAsset,
+        deleteMediaAsset,
+        createNewPage,
+        duplicatePage,
+        deletePage,
+        canUndo,
+        canRedo,
+        undo,
+        redo
       }}
     >
       {children}
