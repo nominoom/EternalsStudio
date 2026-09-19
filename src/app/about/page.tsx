@@ -175,7 +175,13 @@ export default function About() {
                 <Users size={14} />
                 The Core Collective
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">Meet Our Team</h2>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
+                <EditableText
+                  value={siteContent.sections?.teamTitle || 'Meet Our Team'}
+                  label="Team Section Title"
+                  onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, teamTitle: val } })}
+                />
+              </h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                 The creative designers, software engineers, and digital artists driving the success of {siteContent.branding.siteName}.
               </p>
@@ -233,7 +239,12 @@ export default function About() {
 
                     {member.bio && (
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {member.bio}
+                        <EditableText
+                          value={member.bio}
+                          label="Team Member Bio"
+                          multiline
+                          onChange={(val) => updateTeamMember(member.id, { bio: val })}
+                        />
                       </p>
                     )}
 

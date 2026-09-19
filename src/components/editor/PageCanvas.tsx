@@ -25,7 +25,9 @@ import {
   CheckCircle2, 
   HelpCircle,
   Clock,
-  Layers
+  Layers,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { ViewportMode } from './EditorTopBar';
 
@@ -52,7 +54,20 @@ export default function PageCanvas({
     siteContent,
     updateSiteContent,
     updateStat,
+    addStat,
+    deleteStat,
     updateTeamMember,
+    addTeamMember,
+    deleteTeamMember,
+    updatePromoBanner,
+    addPromoBanner,
+    deletePromoBanner,
+    updateReview,
+    addReview,
+    deleteReview,
+    updateServiceItem,
+    addServiceItem,
+    deleteServiceItem,
     moveSection,
     deleteSection,
     duplicateSection
@@ -63,13 +78,25 @@ export default function PageCanvas({
   const activeSections = sectionOrder.filter((id) => !hiddenSections.includes(id));
   const customBlocks: CustomSectionBlock[] = (siteContent.customSections as any)?.[activePage] || [];
 
-  // Services presets for demo
-  const mainServices = [
-    { title: 'Web Development', desc: 'Custom React & Next.js applications, headless CMS, and fast web apps.', icon: <Terminal size={22} />, color: 'from-cyan-400 to-teal-500' },
-    { title: 'Graphic Design', desc: 'Stunning visual identities, esports graphics, team branding kits.', icon: <Palette size={22} />, color: 'from-purple-400 to-indigo-500' },
-    { title: '3D Modeling', desc: 'Detailed 3D product renders, spatial visualizations, character modeling.', icon: <Box size={22} />, color: 'from-pink-400 to-rose-500' },
-    { title: 'Motion Graphics', desc: 'Dynamic animation sequences, video trailers, streaming transitions.', icon: <Video size={22} />, color: 'from-amber-400 to-orange-500' },
-  ];
+  // Services presets fallback
+  const servicesList = siteContent.servicesPage?.items && siteContent.servicesPage.items.length > 0
+    ? siteContent.servicesPage.items
+    : [
+        { id: 'svc-1', title: 'Web Development', desc: 'Custom React & Next.js applications, headless CMS, and fast web apps.', icon: 'Terminal', color: 'from-cyan-400 to-teal-500' },
+        { id: 'svc-2', title: 'Graphic Design', desc: 'Stunning visual identities, esports graphics, team branding kits.', icon: 'Palette', color: 'from-purple-400 to-indigo-500' },
+        { id: 'svc-3', title: '3D Modeling', desc: 'Detailed 3D product renders, spatial visualizations, character modeling.', icon: 'Box', color: 'from-pink-400 to-rose-500' },
+        { id: 'svc-4', title: 'Motion Graphics', desc: 'Dynamic animation sequences, video trailers, streaming transitions.', icon: 'Video', color: 'from-amber-400 to-orange-500' },
+      ];
+
+  const getServiceIcon = (name?: string) => {
+    switch (name) {
+      case 'Palette': return <Palette size={22} />;
+      case 'Box': return <Box size={22} />;
+      case 'Video': return <Video size={22} />;
+      case 'Terminal':
+      default: return <Terminal size={22} />;
+    }
+  };
 
   // Process timeline presets
   const processSteps = [
@@ -118,6 +145,7 @@ export default function PageCanvas({
             <EditableText
               value={siteContent.branding.announcementBarText}
               label="Announcement Bar Message"
+              editable={!isPreviewMode}
               onChange={(val) => updateSiteContent({ branding: { ...siteContent.branding, announcementBarText: val } })}
             />
           </div>
@@ -130,6 +158,7 @@ export default function PageCanvas({
               <EditableText
                 value={siteContent.hero.badgeText}
                 label="Hero Badge Text"
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, badgeText: val } })}
               />
             </span>
@@ -137,12 +166,14 @@ export default function PageCanvas({
               <EditableText
                 value={siteContent.hero.titleLine1}
                 label="Hero Title Line 1"
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, titleLine1: val } })}
               /> <br />
               <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-indigo-500 bg-clip-text text-transparent">
                 <EditableText
                   value={siteContent.hero.titleHighlight}
                   label="Hero Highlighted Text"
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, titleHighlight: val } })}
                 />
               </span>
@@ -152,6 +183,7 @@ export default function PageCanvas({
                 value={siteContent.hero.description}
                 label="Hero Subtitle Description"
                 multiline
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, description: val } })}
               />
             </p>
@@ -160,6 +192,7 @@ export default function PageCanvas({
                 <EditableText
                   value={siteContent.hero.primaryCtaText}
                   label="Primary CTA Button"
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, primaryCtaText: val } })}
                 />
                 <ArrowRight size={16} />
@@ -168,6 +201,7 @@ export default function PageCanvas({
                 <EditableText
                   value={siteContent.hero.secondaryCtaText}
                   label="Secondary CTA Button"
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ hero: { ...siteContent.hero, secondaryCtaText: val } })}
                 />
               </div>
@@ -178,6 +212,7 @@ export default function PageCanvas({
                 src={siteContent.hero.bannerImageUrl || '/eternals-logo.jpg'}
                 alt="Hero Showcase Banner"
                 label="Hero Showcase Banner"
+                editable={!isPreviewMode}
                 placeholderText="Click to set a Hero Showcase Banner Image"
                 onChange={(url) => updateSiteContent({ hero: { ...siteContent.hero, bannerImageUrl: url } })}
                 className="w-full max-h-80 object-cover rounded-3xl border border-slate-800 shadow-2xl"
@@ -192,60 +227,145 @@ export default function PageCanvas({
             {(siteContent.promoBanners || []).map((banner) => (
               <div
                 key={banner.id}
-                className="p-8 rounded-3xl bg-gradient-to-r from-teal-500/15 via-indigo-500/15 to-purple-500/15 border border-teal-500/25 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 text-left"
+                className="group/banner relative p-8 rounded-3xl bg-gradient-to-r from-teal-500/15 via-indigo-500/15 to-purple-500/15 border border-teal-500/25 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 text-left"
               >
+                {!isPreviewMode && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Delete promo banner "${banner.title}"?`)) {
+                        deletePromoBanner(banner.id);
+                      }
+                    }}
+                    className="absolute top-4 right-4 opacity-0 group-hover/banner:opacity-100 p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer shadow-md"
+                    title="Delete Promo Banner"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div className="space-y-3 max-w-xl">
-                  {banner.badge && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-teal-500/20 text-teal-400 border border-teal-500/30">
-                      <Sparkles size={12} />
-                      {banner.badge}
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-teal-500/20 text-teal-400 border border-teal-500/30">
+                    <Sparkles size={12} />
+                    <EditableText
+                      value={banner.badge || 'Featured Showcase'}
+                      label="Banner Badge"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updatePromoBanner(banner.id, { badge: val })}
+                    />
+                  </span>
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-                    {banner.title}
+                    <EditableText
+                      value={banner.title}
+                      label="Banner Title"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updatePromoBanner(banner.id, { title: val })}
+                    />
                   </h3>
                   <p className="text-sm font-medium text-slate-400 leading-relaxed">
-                    {banner.subtitle}
+                    <EditableText
+                      value={banner.subtitle}
+                      label="Banner Subtitle"
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => updatePromoBanner(banner.id, { subtitle: val })}
+                    />
                   </p>
                   <div className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-teal-400 to-indigo-500 rounded-xl shadow-md">
-                    <span>{banner.buttonText}</span>
+                    <EditableText
+                      value={banner.buttonText || 'Explore Portfolio'}
+                      label="Banner Button Text"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updatePromoBanner(banner.id, { buttonText: val })}
+                    />
                     <ArrowRight size={13} />
                   </div>
                 </div>
-                {banner.imageUrl && (
-                  <div className="w-full md:w-72 h-44 rounded-2xl overflow-hidden shadow-2xl border border-slate-800 flex-shrink-0">
-                    <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
+                <div className="w-full md:w-72 h-44 rounded-2xl overflow-hidden shadow-2xl border border-slate-800 flex-shrink-0">
+                  <EditableImage
+                    src={banner.imageUrl || '/eternals-logo.jpg'}
+                    alt={banner.title}
+                    label="Promo Banner Image"
+                    editable={!isPreviewMode}
+                    onChange={(url) => updatePromoBanner(banner.id, { imageUrl: url })}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
             ))}
+
+            {!isPreviewMode && (
+              <button
+                onClick={() => addPromoBanner({
+                  title: 'New Featured Promo Bundle',
+                  subtitle: 'Highlight your custom digital assets or motion graphics.',
+                  badge: 'Special Feature',
+                  imageUrl: '/eternals-logo.jpg',
+                  bgGradient: 'from-teal-500/20 via-indigo-500/20 to-purple-500/20',
+                  buttonText: 'View Details',
+                  buttonLink: '/portfolio',
+                  enabled: true
+                })}
+                className="w-full py-4 border-2 border-dashed border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 rounded-3xl flex items-center justify-center gap-2 text-slate-400 hover:text-teal-400 font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+                <span>Add Promo Banner</span>
+              </button>
+            )}
           </section>
         );
 
       case 'stats':
         return (
-          <section className="mx-auto max-w-6xl py-12 px-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {(siteContent.stats || []).map((stat) => (
-              <div
-                key={stat.id}
-                className="bg-slate-900/80 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 text-center shadow-sm"
-              >
-                <h3 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">
-                  <EditableText
-                    value={stat.value}
-                    label="Stat Metric"
-                    onChange={(val) => updateStat(stat.id, { value: val })}
-                  />
-                </h3>
-                <p className="text-xs font-bold text-slate-400 mt-1">
-                  <EditableText
-                    value={stat.label}
-                    label="Stat Label"
-                    onChange={(val) => updateStat(stat.id, { label: val })}
-                  />
-                </p>
-              </div>
-            ))}
+          <section className="mx-auto max-w-6xl py-12 px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {(siteContent.stats || []).map((stat) => (
+                <div
+                  key={stat.id}
+                  className="group/stat relative bg-slate-900/80 border border-slate-800/80 hover:border-teal-500/40 backdrop-blur-md rounded-2xl p-6 text-center shadow-lg transition-all"
+                >
+                  {!isPreviewMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete metric "${stat.label}"?`)) {
+                          deleteStat(stat.id);
+                        }
+                      }}
+                      className="absolute top-2 right-2 opacity-0 group-hover/stat:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer"
+                      title="Delete this metric"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                  <h3 className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">
+                    <EditableText
+                      value={stat.value}
+                      label="Metric Number"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updateStat(stat.id, { value: val })}
+                    />
+                  </h3>
+                  <p className="text-xs font-bold text-slate-400 mt-2">
+                    <EditableText
+                      value={stat.label}
+                      label="Metric Label"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updateStat(stat.id, { label: val })}
+                    />
+                  </p>
+                </div>
+              ))}
+
+              {!isPreviewMode && (
+                <button
+                  onClick={() => addStat({ value: '100+', label: 'New Metric' })}
+                  className="border-2 border-dashed border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-teal-400 transition-all cursor-pointer group/add"
+                >
+                  <Plus size={22} className="group-hover/add:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">Add Metric</span>
+                </button>
+              )}
+            </div>
           </section>
         );
 
@@ -257,6 +377,7 @@ export default function PageCanvas({
                 <EditableText
                   value={siteContent.servicesPage.headerTitle || 'Our Services'}
                   label="Services Section Title"
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ servicesPage: { ...siteContent.servicesPage, headerTitle: val } })}
                 />
               </h2>
@@ -265,23 +386,68 @@ export default function PageCanvas({
                   value={siteContent.servicesPage.headerSubtitle || 'From concept to launch, we offer comprehensive creative solutions.'}
                   label="Services Section Subtitle"
                   multiline
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ servicesPage: { ...siteContent.servicesPage, headerSubtitle: val } })}
                 />
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mainServices.map((svc, i) => (
+              {servicesList.map((svc) => (
                 <div
-                  key={i}
-                  className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 flex flex-col gap-4 text-left"
+                  key={svc.id}
+                  className="group/svc relative bg-slate-900/80 border border-slate-800/80 hover:border-teal-500/40 rounded-2xl p-6 flex flex-col gap-4 text-left shadow-lg transition-all"
                 >
-                  <div className={`h-11 w-11 rounded-xl flex items-center justify-center bg-gradient-to-br ${svc.color} text-white shadow-md`}>
-                    {svc.icon}
+                  {!isPreviewMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete service "${svc.title}"?`)) {
+                          deleteServiceItem(svc.id);
+                        }
+                      }}
+                      className="absolute top-3 right-3 opacity-0 group-hover/svc:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer"
+                      title="Delete Service"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                  <div className={`h-11 w-11 rounded-xl flex items-center justify-center bg-gradient-to-br ${svc.color || 'from-cyan-400 to-teal-500'} text-white shadow-md`}>
+                    {getServiceIcon(svc.icon)}
                   </div>
-                  <h3 className="font-extrabold text-base text-white">{svc.title}</h3>
-                  <p className="text-xs leading-relaxed text-slate-400">{svc.desc}</p>
+                  <h3 className="font-extrabold text-base text-white">
+                    <EditableText
+                      value={svc.title}
+                      label="Service Title"
+                      editable={!isPreviewMode}
+                      onChange={(val) => updateServiceItem(svc.id, { title: val })}
+                    />
+                  </h3>
+                  <p className="text-xs leading-relaxed text-slate-400">
+                    <EditableText
+                      value={svc.desc}
+                      label="Service Description"
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => updateServiceItem(svc.id, { desc: val })}
+                    />
+                  </p>
                 </div>
               ))}
+
+              {!isPreviewMode && (
+                <button
+                  onClick={() => addServiceItem({
+                    title: 'New Service',
+                    desc: 'Custom creative deliverable tailored to client specifications.',
+                    icon: 'Terminal',
+                    color: 'from-cyan-400 to-teal-500'
+                  })}
+                  className="border-2 border-dashed border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-teal-400 transition-all cursor-pointer group/add"
+                >
+                  <Plus size={22} className="group-hover/add:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">Add Service</span>
+                </button>
+              )}
             </div>
           </section>
         );
@@ -293,30 +459,89 @@ export default function PageCanvas({
               <span className="self-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider">
                 ⭐ Verified Reviews
               </span>
-              <h2 className="text-3xl font-black text-white">Trusted by Creators & Organizations</h2>
+              <h2 className="text-3xl font-black text-white">
+                <EditableText
+                  value={siteContent.sections?.reviewsTitle || 'Trusted by Creators & Organizations'}
+                  label="Reviews Section Title"
+                  editable={!isPreviewMode}
+                  onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, reviewsTitle: val } })}
+                />
+              </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {(siteContent.reviews || []).slice(0, 4).map((rev) => (
-                <div key={rev.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-4 text-left">
+              {(siteContent.reviews || []).map((rev) => (
+                <div key={rev.id} className="group/rev relative bg-slate-900/90 border border-slate-800 hover:border-teal-500/40 rounded-2xl p-5 flex flex-col justify-between gap-4 text-left shadow-lg transition-all">
+                  {!isPreviewMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete review from "${rev.author}"?`)) {
+                          deleteReview(rev.id);
+                        }
+                      }}
+                      className="absolute top-3 right-3 opacity-0 group-hover/rev:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer"
+                      title="Delete Review"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                   <div className="space-y-2">
                     <div className="flex gap-0.5 text-amber-400">
                       {[...Array(rev.rating || 5)].map((_, i) => (
                         <Star key={i} size={14} className="fill-amber-400" />
                       ))}
                     </div>
-                    <p className="text-xs text-slate-300 italic leading-relaxed">"{rev.content}"</p>
+                    <p className="text-xs text-slate-300 italic leading-relaxed">
+                      &quot;<EditableText
+                        value={rev.content}
+                        label="Review Content"
+                        multiline
+                        editable={!isPreviewMode}
+                        onChange={(val) => updateReview(rev.id, { content: val })}
+                      />&quot;
+                    </p>
                   </div>
                   <div className="pt-3 border-t border-slate-800 flex items-center gap-2.5">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
                       {rev.author.charAt(0)}
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-xs text-white truncate">{rev.author}</div>
-                      <div className="text-[10px] text-teal-400 truncate">{rev.company}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-white truncate">
+                        <EditableText
+                          value={rev.author}
+                          label="Author Name"
+                          editable={!isPreviewMode}
+                          onChange={(val) => updateReview(rev.id, { author: val })}
+                        />
+                      </div>
+                      <div className="text-[10px] text-teal-400 truncate">
+                        <EditableText
+                          value={rev.company}
+                          label="Company / Handle"
+                          editable={!isPreviewMode}
+                          onChange={(val) => updateReview(rev.id, { company: val })}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
+
+              {!isPreviewMode && (
+                <button
+                  onClick={() => addReview({
+                    author: 'Happy Creator',
+                    role: 'Creative Director',
+                    company: 'Studio X',
+                    rating: 5,
+                    content: 'Incredible turnaround time and elite quality.'
+                  })}
+                  className="border-2 border-dashed border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-teal-400 transition-all cursor-pointer group/add"
+                >
+                  <Plus size={22} className="group-hover/add:scale-110 transition-transform" />
+                  <span className="text-xs font-bold">Add Review</span>
+                </button>
+              )}
             </div>
           </section>
         );
@@ -329,6 +554,7 @@ export default function PageCanvas({
                 <EditableText
                   value={siteContent.sections.ctaBannerTitle}
                   label="CTA Headline"
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, ctaBannerTitle: val } })}
                 />
               </h2>
@@ -337,6 +563,7 @@ export default function PageCanvas({
                   value={siteContent.sections.ctaBannerDescription}
                   label="CTA Description"
                   multiline
+                  editable={!isPreviewMode}
                   onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, ctaBannerDescription: val } })}
                 />
               </p>
@@ -345,6 +572,7 @@ export default function PageCanvas({
                   <EditableText
                     value={siteContent.sections.ctaBannerButtonText}
                     label="CTA Button Text"
+                    editable={!isPreviewMode}
                     onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, ctaBannerButtonText: val } })}
                   />
                   <ArrowRight size={16} />
@@ -370,6 +598,7 @@ export default function PageCanvas({
                         : `${activePage.charAt(0).toUpperCase() + activePage.slice(1)} Showcase`
                 }
                 label="Page Header Title"
+                editable={!isPreviewMode}
                 onChange={(val) => {
                   if (activePage === 'about') updateSiteContent({ aboutPage: { ...siteContent.aboutPage, headerTitle: val } });
                   else if (activePage === 'services') updateSiteContent({ servicesPage: { ...siteContent.servicesPage, headerTitle: val } });
@@ -387,6 +616,7 @@ export default function PageCanvas({
                 }
                 label="Page Header Subtitle"
                 multiline
+                editable={!isPreviewMode}
                 onChange={(val) => {
                   if (activePage === 'about') updateSiteContent({ aboutPage: { ...siteContent.aboutPage, headerSubtitle: val } });
                   else if (activePage === 'services') updateSiteContent({ servicesPage: { ...siteContent.servicesPage, headerSubtitle: val } });
@@ -407,8 +637,23 @@ export default function PageCanvas({
               {processSteps.map((s, i) => (
                 <div key={i} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col gap-2.5 text-left">
                   <span className="text-xl font-black text-teal-400 font-mono">{s.num}</span>
-                  <h4 className="font-extrabold text-sm text-white">{s.name}</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">{s.desc}</p>
+                  <h4 className="font-extrabold text-sm text-white">
+                    <EditableText
+                      value={s.name}
+                      label={`Step ${s.num} Title`}
+                      editable={!isPreviewMode}
+                      onChange={(val) => { s.name = val; }}
+                    />
+                  </h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <EditableText
+                      value={s.desc}
+                      label={`Step ${s.num} Description`}
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => { s.desc = val; }}
+                    />
+                  </p>
                 </div>
               ))}
             </div>
@@ -425,8 +670,23 @@ export default function PageCanvas({
                   <div className="h-9 w-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center">
                     {ind.icon}
                   </div>
-                  <h4 className="font-extrabold text-sm text-white">{ind.name}</h4>
-                  <p className="text-xs text-slate-400">{ind.desc}</p>
+                  <h4 className="font-extrabold text-sm text-white">
+                    <EditableText
+                      value={ind.name}
+                      label="Industry Name"
+                      editable={!isPreviewMode}
+                      onChange={(val) => { ind.name = val; }}
+                    />
+                  </h4>
+                  <p className="text-xs text-slate-400">
+                    <EditableText
+                      value={ind.desc}
+                      label="Industry Description"
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => { ind.desc = val; }}
+                    />
+                  </p>
                 </div>
               ))}
             </div>
@@ -445,10 +705,30 @@ export default function PageCanvas({
                   </div>
                   <div className="p-5 flex flex-col gap-2">
                     <span className="text-[10px] uppercase font-bold text-teal-400 tracking-wider">
-                      {proj.category}
+                      <EditableText
+                        value={proj.category}
+                        label="Project Category"
+                        editable={!isPreviewMode}
+                        onChange={(val) => { proj.category = val; }}
+                      />
                     </span>
-                    <h3 className="font-extrabold text-lg text-white">{proj.title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{proj.desc}</p>
+                    <h3 className="font-extrabold text-lg text-white">
+                      <EditableText
+                        value={proj.title}
+                        label="Project Title"
+                        editable={!isPreviewMode}
+                        onChange={(val) => { proj.title = val; }}
+                      />
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      <EditableText
+                        value={proj.desc}
+                        label="Project Description"
+                        multiline
+                        editable={!isPreviewMode}
+                        onChange={(val) => { proj.desc = val; }}
+                      />
+                    </p>
                     <div className="flex gap-1.5 pt-2 flex-wrap">
                       {proj.tags.map((t, idx) => (
                         <span key={idx} className="text-[10px] font-medium bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
@@ -478,8 +758,23 @@ export default function PageCanvas({
                       <span className="text-[10px] uppercase font-bold text-slate-400">{prod.category}</span>
                       <span className="text-sm font-black text-teal-400 font-mono">{prod.price}</span>
                     </div>
-                    <h3 className="font-extrabold text-base text-white">{prod.title}</h3>
-                    <p className="text-xs text-slate-400">{prod.desc}</p>
+                    <h3 className="font-extrabold text-base text-white">
+                      <EditableText
+                        value={prod.title}
+                        label="Product Name"
+                        editable={!isPreviewMode}
+                        onChange={(val) => { prod.title = val; }}
+                      />
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      <EditableText
+                        value={prod.desc}
+                        label="Product Description"
+                        multiline
+                        editable={!isPreviewMode}
+                        onChange={(val) => { prod.desc = val; }}
+                      />
+                    </p>
                   </div>
                   <div className="w-full py-2.5 rounded-xl bg-teal-500 text-white font-bold text-xs text-center shadow-md">
                     Instant Download
@@ -498,6 +793,7 @@ export default function PageCanvas({
               <EditableText
                 value={siteContent.aboutPage.storyTitle || 'Our Mission'}
                 label="Mission Section Title"
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, storyTitle: val } })}
               />
             </h2>
@@ -506,6 +802,7 @@ export default function PageCanvas({
                 value={siteContent.aboutPage.storyContent}
                 label="Mission Story Content"
                 multiline
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, storyContent: val } })}
               />
             </div>
@@ -519,6 +816,7 @@ export default function PageCanvas({
               <EditableText
                 value={siteContent.aboutPage.visionTitle || 'Our Core Vision'}
                 label="Core Vision Title"
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, visionTitle: val } })}
               />
             </h3>
@@ -527,6 +825,7 @@ export default function PageCanvas({
                 value={siteContent.aboutPage.visionContent}
                 label="Core Vision Description"
                 multiline
+                editable={!isPreviewMode}
                 onChange={(val) => updateSiteContent({ aboutPage: { ...siteContent.aboutPage, visionContent: val } })}
               />
             </p>
@@ -536,29 +835,112 @@ export default function PageCanvas({
       case 'team':
         return (
           <section className="mx-auto max-w-6xl py-12 px-6 flex flex-col gap-8">
-            <h2 className="text-3xl font-black text-white text-center">Meet the Creative Collective</h2>
+            <h2 className="text-3xl font-black text-white text-center">
+              <EditableText
+                value={siteContent.sections?.teamTitle || 'Meet the Creative Collective'}
+                label="Team Section Heading"
+                editable={!isPreviewMode}
+                onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, teamTitle: val } })}
+              />
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {(siteContent.team || []).map((m) => (
-                <div key={m.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col gap-4 text-left shadow-lg">
+                <div key={m.id} className="group/member relative p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-teal-500/40 flex flex-col gap-4 text-left shadow-xl transition-all">
+                  {!isPreviewMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Remove ${m.name} from team?`)) {
+                          deleteTeamMember(m.id);
+                        }
+                      }}
+                      className="absolute top-4 right-4 opacity-0 group-hover/member:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all cursor-pointer"
+                      title="Remove team member"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                   <div className="flex items-center gap-3">
-                    <div className={`h-12 w-12 rounded-2xl ${m.color || 'bg-teal-500'} text-white font-black text-lg flex items-center justify-center shadow-md flex-shrink-0`}>
-                      {m.initial}
-                    </div>
-                    <div>
-                      <h4 className="font-black text-base text-white">{m.name}</h4>
-                      <p className="text-xs text-teal-400 font-bold">{m.role}</p>
+                    {m.avatarUrl ? (
+                      <div className="h-14 w-14 rounded-2xl overflow-hidden shadow-md flex-shrink-0 border border-slate-700">
+                        <EditableImage
+                          src={m.avatarUrl}
+                          alt={m.name}
+                          label={`${m.name} Avatar`}
+                          editable={!isPreviewMode}
+                          onChange={(url) => updateTeamMember(m.id, { avatarUrl: url })}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => {
+                          const newInitial = window.prompt('Enter avatar initial letter:', m.initial) || m.initial;
+                          const newColor = window.prompt('Enter Tailwind color class (e.g. bg-teal-500, bg-indigo-500, bg-pink-500):', m.color) || m.color;
+                          updateTeamMember(m.id, { initial: newInitial, color: newColor });
+                        }}
+                        className={`h-14 w-14 rounded-2xl ${m.color || 'bg-teal-500'} text-white font-black text-xl flex items-center justify-center shadow-lg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+                        title="Click to change initial or color badge"
+                      >
+                        {m.initial}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-black text-base text-white">
+                        <EditableText
+                          value={m.name}
+                          label="Team Member Name"
+                          editable={!isPreviewMode}
+                          onChange={(val) => updateTeamMember(m.id, { name: val })}
+                        />
+                      </h4>
+                      <p className="text-xs text-teal-400 font-bold mt-0.5">
+                        <EditableText
+                          value={m.role}
+                          label="Role Title"
+                          editable={!isPreviewMode}
+                          onChange={(val) => updateTeamMember(m.id, { role: val })}
+                        />
+                      </p>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">{m.bio}</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    <EditableText
+                      value={m.bio || ''}
+                      label="Member Bio / Description"
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => updateTeamMember(m.id, { bio: val })}
+                    />
+                  </p>
                   <div className="flex gap-1.5 flex-wrap pt-2">
                     {(m.specialties || []).map((sp, idx) => (
-                      <span key={idx} className="text-[10px] font-bold bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
+                      <span key={idx} className="text-[10px] font-bold bg-slate-800/80 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700/50">
                         {sp}
                       </span>
                     ))}
                   </div>
                 </div>
               ))}
+
+              {!isPreviewMode && (
+                <button
+                  onClick={() => addTeamMember({
+                    name: 'New Specialist',
+                    role: 'Lead Designer',
+                    initial: 'N',
+                    color: 'bg-teal-500',
+                    bio: 'Crafting pixel-perfect interface identities and responsive visual systems.',
+                    specialties: ['Design', 'Next.js']
+                  })}
+                  className="border-2 border-dashed border-slate-800 hover:border-teal-500/50 hover:bg-teal-500/5 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-teal-400 transition-all cursor-pointer min-h-[220px] group/add"
+                >
+                  <div className="h-12 w-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover/add:text-teal-400 group-hover/add:border-teal-500/40 transition-all shadow-md">
+                    <Plus size={24} />
+                  </div>
+                  <span className="text-xs font-extrabold uppercase tracking-wider">Add Team Member</span>
+                </button>
+              )}
             </div>
           </section>
         );
@@ -574,8 +956,23 @@ export default function PageCanvas({
                 { name: 'Esports Graphics', desc: 'Team monograms, overlays, and stream assets.' },
               ].map((exp, i) => (
                 <div key={i} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 text-left">
-                  <h4 className="font-extrabold text-sm text-teal-400">{exp.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{exp.desc}</p>
+                  <h4 className="font-extrabold text-sm text-teal-400">
+                    <EditableText
+                      value={exp.name}
+                      label="Discipline Name"
+                      editable={!isPreviewMode}
+                      onChange={(val) => { exp.name = val; }}
+                    />
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-1">
+                    <EditableText
+                      value={exp.desc}
+                      label="Discipline Description"
+                      multiline
+                      editable={!isPreviewMode}
+                      onChange={(val) => { exp.desc = val; }}
+                    />
+                  </p>
                 </div>
               ))}
             </div>
@@ -589,17 +986,38 @@ export default function PageCanvas({
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
               <Mail className="mx-auto text-teal-400 h-6 w-6 mb-2" />
               <div className="text-xs font-bold text-slate-400">Direct Email</div>
-              <div className="font-black text-white text-sm">{siteContent.contactPage.email}</div>
+              <div className="font-black text-white text-sm">
+                <EditableText
+                  value={siteContent.contactPage.email}
+                  label="Contact Email"
+                  editable={!isPreviewMode}
+                  onChange={(val) => updateSiteContent({ contactPage: { ...siteContent.contactPage, email: val } })}
+                />
+              </div>
             </div>
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
               <Phone className="mx-auto text-teal-400 h-6 w-6 mb-2" />
               <div className="text-xs font-bold text-slate-400">Studio Phone</div>
-              <div className="font-black text-white text-sm">{siteContent.contactPage.phone}</div>
+              <div className="font-black text-white text-sm">
+                <EditableText
+                  value={siteContent.contactPage.phone}
+                  label="Contact Phone"
+                  editable={!isPreviewMode}
+                  onChange={(val) => updateSiteContent({ contactPage: { ...siteContent.contactPage, phone: val } })}
+                />
+              </div>
             </div>
             <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
               <Clock className="mx-auto text-teal-400 h-6 w-6 mb-2" />
               <div className="text-xs font-bold text-slate-400">Response Guarantee</div>
-              <div className="font-black text-white text-sm">{siteContent.contactPage.responseTimeText}</div>
+              <div className="font-black text-white text-sm">
+                <EditableText
+                  value={siteContent.contactPage.responseTimeText}
+                  label="Response SLA Guarantee"
+                  editable={!isPreviewMode}
+                  onChange={(val) => updateSiteContent({ contactPage: { ...siteContent.contactPage, responseTimeText: val } })}
+                />
+              </div>
             </div>
           </section>
         );
@@ -629,8 +1047,23 @@ export default function PageCanvas({
             <div className="p-8 rounded-3xl bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-slate-900 border border-indigo-500/30 flex items-center justify-between gap-6 text-left">
               <div className="space-y-1">
                 <span className="text-[10px] uppercase font-black text-indigo-400">Community Hub</span>
-                <h3 className="text-xl font-black text-white">Join the Eternals Discord</h3>
-                <p className="text-xs text-slate-300">Live chat with designers, project status updates, and esports assets.</p>
+                <h3 className="text-xl font-black text-white">
+                  <EditableText
+                    value="Join the Eternals Discord"
+                    label="Discord Banner Title"
+                    editable={!isPreviewMode}
+                    onChange={(val) => {}}
+                  />
+                </h3>
+                <p className="text-xs text-slate-300">
+                  <EditableText
+                    value="Live chat with designers, project status updates, and esports assets."
+                    label="Discord Description"
+                    multiline
+                    editable={!isPreviewMode}
+                    onChange={(val) => {}}
+                  />
+                </p>
               </div>
               <div className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md whitespace-nowrap">
                 Join Server
@@ -654,19 +1087,66 @@ export default function PageCanvas({
       <section className="mx-auto max-w-5xl py-12 px-6 text-center space-y-4">
         {block.badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-teal-500/15 text-teal-400 text-xs font-bold border border-teal-500/30">
-            {block.badge}
+            <EditableText
+              value={block.badge}
+              label="Custom Block Badge"
+              editable={!isPreviewMode}
+              onChange={(val) => { block.badge = val; updateSiteContent((prev) => ({ ...prev })); }}
+            />
           </span>
         )}
-        <h2 className="text-3xl font-black text-white tracking-tight">{block.title}</h2>
-        {block.subtitle && <p className="text-sm text-slate-400 max-w-2xl mx-auto">{block.subtitle}</p>}
-        {block.content && <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">{block.content}</p>}
+        <h2 className="text-3xl font-black text-white tracking-tight">
+          <EditableText
+            value={block.title}
+            label="Custom Block Title"
+            editable={!isPreviewMode}
+            onChange={(val) => { block.title = val; updateSiteContent((prev) => ({ ...prev })); }}
+          />
+        </h2>
+        {block.subtitle && (
+          <p className="text-sm text-slate-400 max-w-2xl mx-auto">
+            <EditableText
+              value={block.subtitle}
+              label="Custom Block Subtitle"
+              multiline
+              editable={!isPreviewMode}
+              onChange={(val) => { block.subtitle = val; updateSiteContent((prev) => ({ ...prev })); }}
+            />
+          </p>
+        )}
+        {block.content && (
+          <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
+            <EditableText
+              value={block.content}
+              label="Custom Block Content"
+              multiline
+              editable={!isPreviewMode}
+              onChange={(val) => { block.content = val; updateSiteContent((prev) => ({ ...prev })); }}
+            />
+          </p>
+        )}
 
         {block.items && block.items.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 text-left">
             {block.items.map((item) => (
               <div key={item.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <h4 className="font-extrabold text-sm text-teal-400">{item.title}</h4>
-                <p className="text-xs text-slate-400">{item.desc}</p>
+                <h4 className="font-extrabold text-sm text-teal-400">
+                  <EditableText
+                    value={item.title}
+                    label="Item Title"
+                    editable={!isPreviewMode}
+                    onChange={(val) => { item.title = val; updateSiteContent((prev) => ({ ...prev })); }}
+                  />
+                </h4>
+                <p className="text-xs text-slate-400">
+                  <EditableText
+                    value={item.desc}
+                    label="Item Description"
+                    multiline
+                    editable={!isPreviewMode}
+                    onChange={(val) => { item.desc = val; updateSiteContent((prev) => ({ ...prev })); }}
+                  />
+                </p>
               </div>
             ))}
           </div>
@@ -675,7 +1155,12 @@ export default function PageCanvas({
         {block.buttonText && (
           <div className="pt-2">
             <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 text-white text-xs font-bold shadow-lg">
-              <span>{block.buttonText}</span>
+              <EditableText
+                value={block.buttonText}
+                label="Button Text"
+                editable={!isPreviewMode}
+                onChange={(val) => { block.buttonText = val; updateSiteContent((prev) => ({ ...prev })); }}
+              />
               <ArrowRight size={14} />
             </div>
           </div>

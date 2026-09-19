@@ -12,6 +12,7 @@ interface EditableTextProps {
   placeholder?: string;
   label?: string;
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span' | 'div';
+  editable?: boolean;
 }
 
 export default function EditableText({
@@ -21,14 +22,17 @@ export default function EditableText({
   multiline = false,
   placeholder = 'Click to edit text...',
   label,
-  as: Component = 'span'
+  as: Component = 'span',
+  editable = true
 }: EditableTextProps) {
   const { isEditMode } = useSiteContent();
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
+  const effectiveEditMode = editable !== undefined ? editable : isEditMode;
+
   // If edit mode is OFF, render plain element
-  if (!isEditMode) {
+  if (!effectiveEditMode) {
     return <Component className={className}>{value}</Component>;
   }
 

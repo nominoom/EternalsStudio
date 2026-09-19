@@ -12,6 +12,7 @@ import {
   GripVertical
 } from 'lucide-react';
 import { SECTION_METADATA } from './EditorSidebar';
+import { useSiteContent } from '../../context/SiteContentContext';
 
 interface SectionWrapperProps {
   sectionId: string;
@@ -44,8 +45,54 @@ export default function SectionWrapper({
   onOpenAddSectionAfter,
   children
 }: SectionWrapperProps) {
+  const { siteContent } = useSiteContent();
+  const currentStyle = siteContent.sectionStyles?.[sectionId];
+
+  const getBgClass = () => {
+    if (currentStyle?.customBg) return '';
+    switch (currentStyle?.bg) {
+      case 'glass':
+        return 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 shadow-xl';
+      case 'slate':
+        return 'bg-slate-900 border border-slate-800 shadow-md';
+      case 'glow':
+        return 'bg-gradient-to-b from-teal-950/20 via-slate-950 to-indigo-950/20 border border-teal-500/20 shadow-2xl shadow-teal-500/5';
+      case 'gradient':
+        return 'bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800/80';
+      case 'mesh':
+      default:
+        return 'bg-slate-950/40 border border-slate-900';
+    }
+  };
+
+  const getPaddingClass = () => {
+    switch (currentStyle?.padding) {
+      case 'compact':
+        return 'py-4 md:py-6';
+      case 'spacious':
+        return 'py-16 md:py-24';
+      case 'standard':
+      default:
+        return 'py-8 md:py-12';
+    }
+  };
+
+  const dynamicStyle = {
+    background: currentStyle?.customBg || undefined,
+    color: currentStyle?.customTextColor || undefined,
+    textAlign: currentStyle?.align || undefined
+  };
+
   if (isPreviewMode) {
-    return <div id={`preview-sec-${sectionId}`}>{children}</div>;
+    return (
+      <div 
+        id={`preview-sec-${sectionId}`} 
+        className={`${getBgClass()} ${getPaddingClass()} transition-all duration-300 rounded-3xl`}
+        style={dynamicStyle}
+      >
+        {children}
+      </div>
+    );
   }
 
   const meta = SECTION_METADATA[sectionId] || {
@@ -55,13 +102,14 @@ export default function SectionWrapper({
 
   return (
     <div className="relative group/sec-wrap my-4 transition-all duration-200">
-      {/* Section Container with Selection Border */}
+      {/* Section Container with Selection Border and Background */}
       <div
         onClick={(e) => {
           e.stopPropagation();
           onSelect();
         }}
-        className={`relative rounded-3xl transition-all duration-200 ${
+        style={dynamicStyle}
+        className={`relative rounded-3xl transition-all duration-200 ${getBgClass()} ${getPaddingClass()} ${
           isSelected
             ? 'ring-2 ring-teal-400 shadow-2xl shadow-teal-500/10'
             : 'hover:ring-1 hover:ring-teal-500/40'

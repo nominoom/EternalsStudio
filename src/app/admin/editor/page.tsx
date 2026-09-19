@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { ShieldAlert, CheckCircle2, AlertTriangle, Sliders, Settings } from 'lucide-react';
@@ -36,6 +36,7 @@ export default function StandaloneEditorPage() {
     resetToDefault,
     isSaving, 
     hasUnsavedChanges, 
+    setIsEditMode,
     addSection,
     deleteSection,
     resetPageSections,
@@ -86,6 +87,14 @@ export default function StandaloneEditorPage() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Synchronize edit mode with preview toggle
+  useEffect(() => {
+    setIsEditMode(!isPreviewMode);
+    return () => {
+      setIsEditMode(false);
+    };
+  }, [isPreviewMode, setIsEditMode]);
 
   // Combine default pages with custom CMS pages
   const allPages = React.useMemo(() => {

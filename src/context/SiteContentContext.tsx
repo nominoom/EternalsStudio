@@ -62,8 +62,18 @@ export interface ReviewItem {
   content: string;
 }
 
+export interface ServiceItem {
+  id: string;
+  title: string;
+  desc: string;
+  icon?: string;
+  color?: string;
+}
+
 export interface SectionStyle {
-  bg?: 'mesh' | 'slate' | 'glass' | 'glow' | 'gradient';
+  bg?: 'mesh' | 'slate' | 'glass' | 'glow' | 'gradient' | 'custom';
+  customBg?: string;
+  customTextColor?: string;
   padding?: 'compact' | 'standard' | 'spacious';
   align?: 'left' | 'center' | 'right';
   border?: boolean;
@@ -119,6 +129,9 @@ export interface SiteContent {
     ctaBannerDescription: string;
     ctaBannerButtonText: string;
     ctaBannerButtonLink: string;
+    teamTitle?: string;
+    reviewsTitle?: string;
+    statsTitle?: string;
   };
   aboutPage: {
     headerTitle: string;
@@ -131,6 +144,7 @@ export interface SiteContent {
   servicesPage: {
     headerTitle: string;
     headerSubtitle: string;
+    items?: ServiceItem[];
   };
   contactPage: {
     email: string;
@@ -319,7 +333,10 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     ctaBannerTitle: 'Ready to elevate your digital presence?',
     ctaBannerDescription: 'Collaborate with our team of elite designers and developers to bring your vision to life.',
     ctaBannerButtonText: 'Start a Project',
-    ctaBannerButtonLink: '/contact'
+    ctaBannerButtonLink: '/contact',
+    teamTitle: 'Meet the Creative Collective',
+    reviewsTitle: 'Trusted by Creators & Organizations',
+    statsTitle: 'Studio Milestones'
   },
   aboutPage: {
     headerTitle: 'Creating Visual Excellence',
@@ -331,7 +348,13 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   },
   servicesPage: {
     headerTitle: 'Our Services',
-    headerSubtitle: 'Custom development and creative design solutions tailored to match your specific workflow.'
+    headerSubtitle: 'Custom development and creative design solutions tailored to match your specific workflow.',
+    items: [
+      { id: 'svc-1', title: 'Web Development', desc: 'Custom React & Next.js applications, headless CMS, and fast web apps.', icon: 'Terminal', color: 'from-cyan-400 to-teal-500' },
+      { id: 'svc-2', title: 'Graphic Design', desc: 'Stunning visual identities, esports graphics, team branding kits.', icon: 'Palette', color: 'from-purple-400 to-indigo-500' },
+      { id: 'svc-3', title: '3D Modeling', desc: 'Detailed 3D product renders, spatial visualizations, character modeling.', icon: 'Box', color: 'from-pink-400 to-rose-500' },
+      { id: 'svc-4', title: 'Motion Graphics', desc: 'Dynamic animation sequences, video trailers, streaming transitions.', icon: 'Video', color: 'from-amber-400 to-orange-500' }
+    ]
   },
   contactPage: {
     email: 'Eternalsanctuarygg@gmail.com',
@@ -371,6 +394,13 @@ export interface SiteContentContextType {
   addPromoBanner: (banner: Omit<PromoBanner, 'id'>) => void;
   updatePromoBanner: (id: string, updated: Partial<PromoBanner>) => void;
   deletePromoBanner: (id: string) => void;
+  // Helper methods for Reviews & Services
+  addReview: (review: Omit<ReviewItem, 'id'>) => void;
+  updateReview: (id: string, review: Partial<ReviewItem>) => void;
+  deleteReview: (id: string) => void;
+  addServiceItem: (item: Omit<ServiceItem, 'id'>) => void;
+  updateServiceItem: (id: string, item: Partial<ServiceItem>) => void;
+  deleteServiceItem: (id: string) => void;
   // Section Reordering, Visibility, Styles, and Add/Delete
   moveSection: (pageId: string, sectionId: string, direction: 'up' | 'down') => void;
   toggleSectionVisibility: (pageId: string, sectionId: string) => void;
@@ -630,6 +660,67 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
     setSiteContent((prev) => ({
       ...prev,
       promoBanners: (prev.promoBanners || []).filter((b) => b.id !== id)
+    }));
+  };
+
+  // Helper CRUD methods for Reviews
+  const addReview = (review: Omit<ReviewItem, 'id'>) => {
+    const newRev: ReviewItem = {
+      ...review,
+      id: `rev-${Date.now()}`
+    };
+    setSiteContent((prev) => ({
+      ...prev,
+      reviews: [...(prev.reviews || []), newRev]
+    }));
+  };
+
+  const updateReview = (id: string, updated: Partial<ReviewItem>) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      reviews: (prev.reviews || []).map((r) => (r.id === id ? { ...r, ...updated } : r))
+    }));
+  };
+
+  const deleteReview = (id: string) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      reviews: (prev.reviews || []).filter((r) => r.id !== id)
+    }));
+  };
+
+  // Helper CRUD methods for Services
+  const addServiceItem = (item: Omit<ServiceItem, 'id'>) => {
+    const newSvc: ServiceItem = {
+      ...item,
+      id: `svc-${Date.now()}`
+    };
+    setSiteContent((prev) => ({
+      ...prev,
+      servicesPage: {
+        ...prev.servicesPage,
+        items: [...(prev.servicesPage.items || []), newSvc]
+      }
+    }));
+  };
+
+  const updateServiceItem = (id: string, updated: Partial<ServiceItem>) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      servicesPage: {
+        ...prev.servicesPage,
+        items: (prev.servicesPage.items || []).map((s) => (s.id === id ? { ...s, ...updated } : s))
+      }
+    }));
+  };
+
+  const deleteServiceItem = (id: string) => {
+    setSiteContent((prev) => ({
+      ...prev,
+      servicesPage: {
+        ...prev.servicesPage,
+        items: (prev.servicesPage.items || []).filter((s) => s.id !== id)
+      }
     }));
   };
 
@@ -1180,6 +1271,12 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
         addSection,
         updateSectionStyle,
         resetPageSections,
+        addReview,
+        updateReview,
+        deleteReview,
+        addServiceItem,
+        updateServiceItem,
+        deleteServiceItem,
         // Full CMS Store & Studio Builder Capabilities
         cmsStore,
         activeDraft,

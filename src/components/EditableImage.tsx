@@ -12,6 +12,7 @@ interface EditableImageProps {
   containerClassName?: string;
   label?: string;
   placeholderText?: string;
+  editable?: boolean;
 }
 
 export default function EditableImage({
@@ -21,7 +22,8 @@ export default function EditableImage({
   className = '',
   containerClassName = '',
   label = 'Banner Image',
-  placeholderText = 'No image selected'
+  placeholderText = 'No image selected',
+  editable = true
 }: EditableImageProps) {
   const { isEditMode } = useSiteContent();
   const [isEditing, setIsEditing] = useState(false);
@@ -30,8 +32,10 @@ export default function EditableImage({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const effectiveEditMode = editable !== undefined ? editable : isEditMode;
+
   // If edit mode is OFF, render plain image or placeholder
-  if (!isEditMode) {
+  if (!effectiveEditMode) {
     if (!src) return null;
     return <img src={src} alt={alt} className={className} />;
   }

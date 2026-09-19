@@ -10,7 +10,7 @@ import { useSiteContent } from '../context/SiteContentContext';
 import { ArrowRight, Terminal, Palette, Box, Video, Sparkles, Star } from 'lucide-react';
 
 export default function Home() {
-  const { siteContent, updateSiteContent, updateStat } = useSiteContent();
+  const { siteContent, updateSiteContent, updateStat, updateReview } = useSiteContent();
 
   const services = [
     {
@@ -238,7 +238,11 @@ export default function Home() {
                 Verified Client Reviews
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
-                Trusted by Esports Clans & Digital Brands
+                <EditableText
+                  value={siteContent.sections?.reviewsTitle || 'Trusted by Esports Clans & Digital Brands'}
+                  label="Reviews Section Title"
+                  onChange={(val) => updateSiteContent({ sections: { ...siteContent.sections, reviewsTitle: val } })}
+                />
               </h2>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
                 See what founders, creative directors, and creators say about partnering with Eternals Studio.
@@ -258,7 +262,12 @@ export default function Home() {
                       ))}
                     </div>
                     <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300 italic">
-                      "{rev.content}"
+                      &quot;<EditableText
+                        value={rev.content}
+                        label="Review Quote"
+                        multiline
+                        onChange={(val) => updateReview(rev.id, { content: val })}
+                      />&quot;
                     </p>
                   </div>
 
@@ -268,10 +277,20 @@ export default function Home() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
-                        {rev.author}
+                        <EditableText
+                          value={rev.author}
+                          label="Review Author"
+                          onChange={(val) => updateReview(rev.id, { author: val })}
+                        />
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                        {rev.role} • <span className="text-teal-600 dark:text-teal-400 font-medium">{rev.company}</span>
+                        {rev.role} • <span className="text-teal-600 dark:text-teal-400 font-medium">
+                          <EditableText
+                            value={rev.company}
+                            label="Review Company"
+                            onChange={(val) => updateReview(rev.id, { company: val })}
+                          />
+                        </span>
                       </div>
                     </div>
                   </div>
